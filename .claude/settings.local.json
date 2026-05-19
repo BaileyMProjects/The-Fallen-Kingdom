@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir \"C:\\\\Users\\\\mcnin\\\\.vscode\\\\Projects\\\\cs1op-textgame\")"
+    ]
+  }
+}

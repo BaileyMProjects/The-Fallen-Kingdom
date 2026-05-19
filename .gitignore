@@ -1,0 +1,30 @@
+# Compiled Java class files
+*.class
+
+# Build/output directories
+out/
+bin/
+build/
+
+# IDE configuration files
+.idea/
+*.iml
+*.iws
+*.ipr
+.classpath
+.project
+.settings/
+*.launch
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Log files
+*.log
+
+# JAR/WAR/EAR files (do not commit compiled artifacts)
+*.jar
+*.war
+*.ear
