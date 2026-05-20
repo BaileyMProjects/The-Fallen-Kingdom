@@ -111,16 +111,16 @@ public class CombatSystem {
         }
 
         if (!player.isAlive()) {
-            // OBSERVER PATTERN: signal combat end so GUI restores ExplorationPanel
+            pause(2000); // hold the defeat screen long enough to read the message
             eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
             return false;
         }
 
         // Enemy defeated
         onEnemyDefeated(player, enemy);
-        pause(600);
+        pause(2000); // hold the victory moment before returning to exploration
         eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
-        pause(400); // let GUI switch back before loot text prints
+        pause(500); // let GUI switch back before loot text prints
         return true;
     }
 

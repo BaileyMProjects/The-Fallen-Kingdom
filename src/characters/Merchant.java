@@ -47,6 +47,10 @@ public class Merchant extends NPC {
         shopItems.add(item);
     }
 
+    public java.util.List<Item> getShopItems() {
+        return java.util.Collections.unmodifiableList(shopItems);
+    }
+
     // -------------------------------------------------------------------------
     // Transactions
     // -------------------------------------------------------------------------

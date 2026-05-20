@@ -2,7 +2,15 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.BiFunction;
 import java.util.function.Consumer;
 
 /**
@@ -32,19 +40,33 @@ public class ExplorationPanel extends JPanel {
     private final JTextArea     sidebarQuests;
     private final JTextField    inputField;
 
-    private final StringBuilder                  fullHistory    = new StringBuilder();
-    private final StringBuilder                  currentPage    = new StringBuilder();
-    private boolean                              historyMode    = false;
-    private final ConcurrentLinkedQueue<Character> charQueue    = new ConcurrentLinkedQueue<>();
-    private final Timer                          typewriterTimer;
+    private static final int CHAR_DELAY_MS = 22;
+
+    private final StringBuilder  fullHistory    = new StringBuilder();
+    private final StringBuilder  currentPage    = new StringBuilder();
+    private boolean              historyMode    = false;
+    private final AtomicLong     pageVersion    = new AtomicLong(0);
+    private final ExecutorService typewriterPool = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "typewriter-explore");
+        t.setDaemon(true);
+        return t;
+    });
+
+    // Tab-autocomplete state
+    private final BiFunction<String, String, List<String>> completer;
+    private List<String> tabCompletions = Collections.emptyList();
+    private int          tabIndex       = 0;
+    private String       tabBase        = "";
 
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
 
-    public ExplorationPanel(Consumer<String> onSubmit) {
+    public ExplorationPanel(Consumer<String> onSubmit,
+                            BiFunction<String, String, List<String>> completer) {
         super(new BorderLayout(4, 4));
         setBackground(BG_MAIN);
+        this.completer = completer;
 
         // ── Main output area ─────────────────────────────────────────────────
         outputArea = new JTextArea();
@@ -58,16 +80,6 @@ public class ExplorationPanel extends JPanel {
         JScrollPane outputScroll = new JScrollPane(outputArea);
         outputScroll.setBorder(BorderFactory.createEmptyBorder());
         outputScroll.getVerticalScrollBar().setUnitIncrement(16);
-
-        // Typewriter — drip one char every 14 ms onto the output area
-        typewriterTimer = new Timer(14, e -> {
-            Character c = charQueue.poll();
-            if (c != null) {
-                outputArea.append(String.valueOf(c));
-                outputArea.setCaretPosition(outputArea.getDocument().getLength());
-            }
-        });
-        typewriterTimer.start();
 
         // ── Sidebar ──────────────────────────────────────────────────────────
         sidebarStats  = buildSidebarText();
@@ -87,6 +99,19 @@ public class ExplorationPanel extends JPanel {
 
         // ── Input row ────────────────────────────────────────────────────────
         inputField = buildInputField();
+        // Allow Tab to be handled as a key event instead of cycling focus
+        inputField.setFocusTraversalKeysEnabled(false);
+        inputField.addKeyListener(new KeyAdapter() {
+            @Override public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_TAB) {
+                    e.consume();
+                    handleTab();
+                } else {
+                    tabCompletions = Collections.emptyList();
+                }
+            }
+        });
+
         JButton sendBtn = buildSendButton("Enter");
 
         Runnable doSubmit = () -> {
@@ -142,30 +167,30 @@ public class ExplorationPanel extends JPanel {
     }
 
     /**
-     * Enqueues text for the typewriter to drip onto the screen character by character.
-     * Also writes immediately to fullHistory and currentPage so the history toggle
-     * always contains the complete text regardless of display state.
-     * Must be called on the EDT (dispatched there by TextAreaStream).
+     * Submits text to the single-threaded typewriter pool.
+     * Decorative lines (borders, spaced-out titles) appear instantly;
+     * narrative/dialogue text types out character by character.
+     * Called on the EDT via TextAreaStream.
      */
     public void appendText(String text) {
         fullHistory.append(text);
         currentPage.append(text);
         if (!historyMode) {
-            for (char c : text.toCharArray()) charQueue.offer(c);
+            final long version = pageVersion.get();
+            typewriterPool.submit(() -> typewriteText(text, version));
         }
     }
 
     /**
-     * Clears the visible screen and starts a new page, while preserving history.
+     * Clears the visible screen and starts a new page while preserving history.
+     * Increments pageVersion so any in-flight typewriter task abandons its output.
      * Must be called on the EDT (GuiObserver uses invokeAndWait).
      */
     public void clearScreen() {
+        pageVersion.incrementAndGet();
         fullHistory.append("\n--- [ Previous location ] ---\n\n");
         currentPage.setLength(0);
-        charQueue.clear();
-        if (!historyMode) {
-            outputArea.setText("");
-        }
+        outputArea.setText("");
     }
 
     /**
@@ -173,7 +198,7 @@ public class ExplorationPanel extends JPanel {
      * Called on the EDT when the player types "history" or "log".
      */
     public void toggleHistory() {
-        charQueue.clear();
+        pageVersion.incrementAndGet();
         historyMode = !historyMode;
         if (historyMode) {
             outputArea.setText(fullHistory.toString());
@@ -187,6 +212,90 @@ public class ExplorationPanel extends JPanel {
     // -------------------------------------------------------------------------
     // Private helpers
     // -------------------------------------------------------------------------
+
+    private void handleTab() {
+        String current = inputField.getText();
+        int spaceIdx   = current.indexOf(' ');
+        if (spaceIdx < 0) return; // nothing after the command yet
+
+        // Start a fresh cycle if completions are empty or the text has diverged
+        if (tabCompletions.isEmpty() || !current.startsWith(tabBase)) {
+            tabBase          = current.substring(0, spaceIdx + 1);        // e.g. "talk "
+            String cmd       = current.substring(0, spaceIdx).trim();
+            String prefix    = current.substring(spaceIdx + 1).trim();
+            List<String> raw = completer.apply(cmd, prefix);
+            tabCompletions   = raw.isEmpty() ? Collections.emptyList() : new ArrayList<>(raw);
+            if (tabCompletions.isEmpty()) return;
+            tabIndex = 0;
+        }
+
+        inputField.setText(tabBase + tabCompletions.get(tabIndex));
+        tabIndex = (tabIndex + 1) % tabCompletions.size();
+    }
+
+    /**
+     * Runs on the typewriter pool thread. Splits text into lines and either
+     * dispatches them instantly (decorative) or drips them char-by-char (real text).
+     * Checks pageVersion before each dispatch so a clearScreen() mid-flight
+     * prevents stale characters from appearing on the new page.
+     */
+    private void typewriteText(String text, long version) {
+        StringBuilder line = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            if (pageVersion.get() != version) return;
+            line.append(c);
+            if (c == '\n') {
+                dispatchLine(line.toString(), version);
+                line.setLength(0);
+            }
+        }
+        if (line.length() > 0) dispatchLine(line.toString(), version);
+    }
+
+    private void dispatchLine(String line, long version) {
+        if (isDecorativeLine(line)) {
+            SwingUtilities.invokeLater(() -> {
+                if (pageVersion.get() == version) {
+                    outputArea.append(line);
+                    outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                }
+            });
+        } else {
+            for (char c : line.toCharArray()) {
+                if (pageVersion.get() != version) return;
+                final char fc = c;
+                SwingUtilities.invokeLater(() -> {
+                    if (pageVersion.get() == version) {
+                        outputArea.append(String.valueOf(fc));
+                        outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                    }
+                });
+                try {
+                    Thread.sleep(CHAR_DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+    }
+
+    /**
+     * Returns true when a line is purely decorative and should appear instantly.
+     * A line is decorative if no letter appears in a run of more than one — so
+     * "========", "--------", and spaced-out titles like "T H E   K I N G D O M"
+     * are instant, while real words like "darkness" are typewritten.
+     */
+    private static boolean isDecorativeLine(String text) {
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return true;
+        int run = 0;
+        for (char c : trimmed.toCharArray()) {
+            if (Character.isLetter(c)) { if (++run > 1) return false; }
+            else                       { run = 0; }
+        }
+        return true;
+    }
 
     private JTextArea buildSidebarText() {
         JTextArea area = new JTextArea("—");

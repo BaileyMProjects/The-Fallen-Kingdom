@@ -41,5 +41,8 @@ public enum GameEventType {
     TALKED_TO_NPC,
 
     /** Fired immediately before displaying a new location, so the GUI can clear the screen. */
-    LOCATION_CHANGED
+    LOCATION_CHANGED,
+
+    /** Fired after gold/loot is awarded so the sidebar refreshes with the correct values. */
+    PLAYER_STATS_CHANGED
 }

@@ -50,7 +50,8 @@ public class GameWindow extends JFrame {
         Consumer<String> onSubmit = text -> game.getInputHandler().provide(text);
 
         // Build the two screen panels
-        this.explorationPanel = new ExplorationPanel(onSubmit);
+        this.explorationPanel = new ExplorationPanel(onSubmit,
+                (cmd, prefix) -> game.getCompletions(cmd, prefix));
         this.combatPanel      = new CombatPanel(onSubmit);
 
         // CardLayout container

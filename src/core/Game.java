@@ -24,6 +24,10 @@ import world.Direction;
 import world.Location;
 import world.World;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * Game — central game orchestrator.
  *
@@ -316,6 +320,11 @@ public class Game {
                 System.out.println(enemy.getName() + " dropped: " + loot.getName() + ".");
             }
 
+            // Wait for the typewriter to finish printing the gold/loot lines,
+            // then push a sidebar refresh so the gold counter updates visibly.
+            pause(700);
+            eventManager.notify(new GameEvent(GameEventType.PLAYER_STATS_CHANGED, null));
+
             if (enemy.isBoss()) {
                 displayVictory();
                 running = false;
@@ -451,6 +460,63 @@ public class Game {
 
     private void initializeQuests() {
         questManager.initializeQuests(player);
+    }
+
+    // -------------------------------------------------------------------------
+    // Tab-autocomplete provider — called from the EDT, returns target names
+    // -------------------------------------------------------------------------
+
+    /**
+     * Returns a list of valid completion strings for the given command and target prefix.
+     * Used by ExplorationPanel to power tab-autocomplete in the input field.
+     * Safe to call from the EDT; returns empty list if the world is not yet initialised.
+     */
+    public List<String> getCompletions(String command, String prefix) {
+        if (world == null || player == null) return Collections.emptyList();
+        Location loc = world.getCurrentLocation();
+        List<String> results = new ArrayList<>();
+        String lp = prefix.toLowerCase();
+
+        switch (command.toLowerCase()) {
+            case "talk":
+                for (NPC n : loc.getNpcs())
+                    if (n.getName().toLowerCase().startsWith(lp)) results.add(n.getName());
+                break;
+            case "attack":
+                for (Enemy e : loc.getEnemies())
+                    if (e.getName().toLowerCase().startsWith(lp)) results.add(e.getName());
+                break;
+            case "take":
+                for (Item i : loc.getItems())
+                    if (i.getName().toLowerCase().startsWith(lp)) results.add(i.getName());
+                break;
+            case "drop": case "use": case "equip": case "sell":
+                for (Item i : player.getInventory().getItems())
+                    if (i.getName().toLowerCase().startsWith(lp)) results.add(i.getName());
+                break;
+            case "buy":
+                Merchant m = loc.findNPCOfType(Merchant.class);
+                if (m != null)
+                    for (Item i : m.getShopItems())
+                        if (i.getName().toLowerCase().startsWith(lp)) results.add(i.getName());
+                break;
+            case "go":
+                for (Direction d : Direction.values())
+                    if (loc.hasExit(d) && d.name().toLowerCase().startsWith(lp))
+                        results.add(d.name().toLowerCase());
+                break;
+            default:
+                break;
+        }
+        return results;
+    }
+
+    // -------------------------------------------------------------------------
+    // Utilities
+    // -------------------------------------------------------------------------
+
+    private static void pause(int ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 
     // -------------------------------------------------------------------------

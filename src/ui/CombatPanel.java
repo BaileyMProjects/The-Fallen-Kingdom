@@ -2,7 +2,8 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 
 /**
@@ -38,8 +39,13 @@ public class CombatPanel extends JPanel {
     private final JTextArea    outputArea;
     private final JTextField   inputField;
 
-    private final ConcurrentLinkedQueue<Character> charQueue = new ConcurrentLinkedQueue<>();
-    private final Timer typewriterTimer;
+    private static final int CHAR_DELAY_MS = 10;
+
+    private final ExecutorService typewriterPool = Executors.newSingleThreadExecutor(r -> {
+        Thread t = new Thread(r, "typewriter-combat");
+        t.setDaemon(true);
+        return t;
+    });
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -94,16 +100,6 @@ public class CombatPanel extends JPanel {
         JScrollPane logScroll = new JScrollPane(outputArea);
         logScroll.setBorder(BorderFactory.createLineBorder(new Color(55, 35, 75)));
         logScroll.getVerticalScrollBar().setUnitIncrement(16);
-
-        // Typewriter — slightly faster than exploration for snappier combat feel
-        typewriterTimer = new Timer(10, e -> {
-            Character c = charQueue.poll();
-            if (c != null) {
-                outputArea.append(String.valueOf(c));
-                outputArea.setCaretPosition(outputArea.getDocument().getLength());
-            }
-        });
-        typewriterTimer.start();
 
         // Centre pane: HP bars on top, log below
         JPanel centrePane = new JPanel(new BorderLayout(0, 0));
@@ -165,11 +161,57 @@ public class CombatPanel extends JPanel {
     public JTextArea getOutputArea() { return outputArea; }
 
     /**
-     * Enqueues text for the typewriter to drip onto the combat log.
-     * Called on the EDT via TextAreaStream.
+     * Submits text to the typewriter pool. Decorative lines appear instantly;
+     * real combat messages type out character by character at CHAR_DELAY_MS.
      */
     public void appendText(String text) {
-        for (char c : text.toCharArray()) charQueue.offer(c);
+        typewriterPool.submit(() -> typewriteText(text));
+    }
+
+    private void typewriteText(String text) {
+        StringBuilder line = new StringBuilder();
+        for (char c : text.toCharArray()) {
+            line.append(c);
+            if (c == '\n') {
+                dispatchLine(line.toString());
+                line.setLength(0);
+            }
+        }
+        if (line.length() > 0) dispatchLine(line.toString());
+    }
+
+    private void dispatchLine(String line) {
+        if (isDecorativeLine(line)) {
+            SwingUtilities.invokeLater(() -> {
+                outputArea.append(line);
+                outputArea.setCaretPosition(outputArea.getDocument().getLength());
+            });
+        } else {
+            for (char c : line.toCharArray()) {
+                final char fc = c;
+                SwingUtilities.invokeLater(() -> {
+                    outputArea.append(String.valueOf(fc));
+                    outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                });
+                try {
+                    Thread.sleep(CHAR_DELAY_MS);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
+                }
+            }
+        }
+    }
+
+    private static boolean isDecorativeLine(String text) {
+        String trimmed = text.trim();
+        if (trimmed.isEmpty()) return true;
+        int run = 0;
+        for (char c : trimmed.toCharArray()) {
+            if (Character.isLetter(c)) { if (++run > 1) return false; }
+            else                       { run = 0; }
+        }
+        return true;
     }
 
     public void requestInputFocus() {

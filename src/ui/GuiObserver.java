@@ -93,6 +93,10 @@ public class GuiObserver implements GameObserver {
                 refreshSidebar();
                 break;
 
+            case PLAYER_STATS_CHANGED:
+                refreshSidebar();
+                break;
+
             case LOCATION_CHANGED:
                 // invokeAndWait blocks the game thread until the clear is done,
                 // guaranteeing the new location text prints onto a clean screen.
