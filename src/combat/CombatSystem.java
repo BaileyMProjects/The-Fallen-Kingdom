@@ -60,6 +60,10 @@ public class CombatSystem {
         System.out.println("  COMBAT: " + enemy.getName());
         System.out.println("========================================");
 
+        // OBSERVER PATTERN: GUI listens for this to switch to CombatPanel
+        // and load the enemy's ASCII art.  Enemy object passed as context.
+        eventManager.notify(new GameEvent(GameEventType.COMBAT_STARTED, enemy.getName(), enemy));
+
         while (player.isAlive() && enemy.isAlive()) {
             printCombatStatus(player, enemy);
 
@@ -81,6 +85,8 @@ public class CombatSystem {
 
                     case "r": case "run": case "flee":
                         if (attemptFlee(player, enemy, inputHandler)) {
+                            eventManager.notify(new GameEvent(
+                                    GameEventType.COMBAT_ENDED, enemy.getName()));
                             return true;   // player escaped safely
                         }
                         validAction = true;
@@ -101,11 +107,14 @@ public class CombatSystem {
         }
 
         if (!player.isAlive()) {
+            // OBSERVER PATTERN: signal combat end so GUI restores ExplorationPanel
+            eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
             return false;
         }
 
         // Enemy defeated
         onEnemyDefeated(player, enemy);
+        eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
         return true;
     }
 

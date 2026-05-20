@@ -10,8 +10,11 @@ import characters.NPC;
 import characters.Player;
 import combat.CombatSystem;
 import events.EventManager;
+import events.GameObserver;
 import events.PlayerObserver;
 import events.QuestObserver;
+import events.GameEvent;
+import events.GameEventType;
 import items.Item;
 import quests.QuestManager;
 import util.Command;
@@ -275,6 +278,10 @@ public class Game {
         }
         String dialogue = npc.talk(player, questManager);
         System.out.println("\n" + npc.getName() + ": \"" + dialogue + "\"\n");
+
+        // OBSERVER PATTERN: lets QuestManager detect "Elder's Plea" quest trigger
+        eventManager.notify(new GameEvent(
+                GameEventType.TALKED_TO_NPC, npc.getName().toLowerCase()));
     }
 
     private void handleAttack(Command command) {
@@ -326,6 +333,13 @@ public class Game {
             return;
         }
         current.getPuzzle().attempt(player, inputHandler, current);
+
+        // OBSERVER PATTERN: notify after attempt so QuestManager can track
+        // the "Dungeon Delver" side quest (two puzzles solved)
+        if (current.getPuzzle().isSolved()) {
+            eventManager.notify(new GameEvent(
+                    GameEventType.PUZZLE_SOLVED, current.getPuzzle().getName()));
+        }
     }
 
     private void handleBuy(Command command) {
@@ -439,13 +453,22 @@ public class Game {
     }
 
     // -------------------------------------------------------------------------
-    // Package-private accessors (used by unit tests)
+    // Accessors
     // -------------------------------------------------------------------------
 
-    Player       getPlayer()       { return player; }
-    World        getWorld()        { return world; }
-    QuestManager getQuestManager() { return questManager; }
-    boolean      isRunning()       { return running; }
+    /** Returns the active player, or {@code null} before {@link #start()} creates one. */
+    public Player       getPlayer()       { return player; }
+    public QuestManager getQuestManager() { return questManager; }
+    public InputHandler getInputHandler() { return inputHandler; }
+
+    /** Subscribes an additional observer — used by GameWindow to attach GuiObserver. */
+    public void registerObserver(GameObserver observer) {
+        eventManager.subscribe(observer);
+    }
+
+    // Package-private — used by unit tests
+    World   getWorld()    { return world; }
+    boolean isRunning()   { return running; }
 
     /** Allows the combat system (or tests) to stop the main loop externally. */
     public void setRunning(boolean running) {
