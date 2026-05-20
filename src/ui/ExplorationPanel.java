@@ -26,10 +26,14 @@ public class ExplorationPanel extends JPanel {
     private static final Color FG_HEADER  = new Color(130, 180, 255);
     private static final Color FG_PROMPT  = new Color(100, 210, 100);
 
-    private final JTextArea outputArea;
-    private final JTextArea sidebarStats;
-    private final JTextArea sidebarQuests;
-    private final JTextField inputField;
+    private final JTextArea     outputArea;
+    private final JTextArea     sidebarStats;
+    private final JTextArea     sidebarQuests;
+    private final JTextField    inputField;
+
+    private final StringBuilder fullHistory  = new StringBuilder();
+    private final StringBuilder currentPage  = new StringBuilder();
+    private boolean             historyMode  = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -76,7 +80,11 @@ public class ExplorationPanel extends JPanel {
             String text = inputField.getText().trim();
             if (!text.isEmpty()) {
                 inputField.setText("");
-                onSubmit.accept(text);
+                if (text.equalsIgnoreCase("history") || text.equalsIgnoreCase("log")) {
+                    toggleHistory();
+                } else {
+                    onSubmit.accept(text);
+                }
             }
         };
         inputField.addActionListener(e -> doSubmit.run());
@@ -118,6 +126,46 @@ public class ExplorationPanel extends JPanel {
     /** Replace the quest-log block with fresh text. */
     public void updateQuests(String text) {
         SwingUtilities.invokeLater(() -> sidebarQuests.setText(text));
+    }
+
+    /**
+     * Appends text to both the full history and the current page.
+     * Must be called on the EDT. Used by GameWindow's TextAreaStream.
+     */
+    public void appendText(String text) {
+        fullHistory.append(text);
+        currentPage.append(text);
+        if (!historyMode) {
+            outputArea.append(text);
+            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+        }
+    }
+
+    /**
+     * Clears the visible screen and starts a new page, while preserving history.
+     * Must be called on the EDT (GuiObserver uses invokeAndWait).
+     */
+    public void clearScreen() {
+        fullHistory.append("\n--- [ Previous location ] ---\n\n");
+        currentPage.setLength(0);
+        if (!historyMode) {
+            outputArea.setText("");
+        }
+    }
+
+    /**
+     * Toggles between the clean current-location view and the full scrollable history.
+     * Called on the EDT when the player types "history" or "log".
+     */
+    public void toggleHistory() {
+        historyMode = !historyMode;
+        if (historyMode) {
+            outputArea.setText(fullHistory.toString());
+            outputArea.append("\n--- [ Showing full history — type 'history' to return ] ---\n");
+        } else {
+            outputArea.setText(currentPage.toString());
+        }
+        outputArea.setCaretPosition(outputArea.getDocument().getLength());
     }
 
     // -------------------------------------------------------------------------

@@ -59,8 +59,8 @@ public class GameWindow extends JFrame {
         cardPanel.add(explorationPanel, EXPLORE_CARD);
         cardPanel.add(combatPanel,      COMBAT_CARD);
 
-        // Redirect System.out → exploration text area by default
-        this.outputStream = new TextAreaStream(explorationPanel.getOutputArea());
+        // Redirect System.out → exploration panel (which manages its own history)
+        this.outputStream = new TextAreaStream(explorationPanel::appendText);
         System.setOut(new PrintStream(outputStream, true));
 
         // Register the GUI observer so it can react to game events
@@ -87,7 +87,7 @@ public class GameWindow extends JFrame {
     /** Switch to the exploration view and route System.out there. */
     public void switchToExplore() {
         SwingUtilities.invokeLater(() -> {
-            outputStream.setTarget(explorationPanel.getOutputArea());
+            outputStream.setConsumer(explorationPanel::appendText);
             cardLayout.show(cardPanel, EXPLORE_CARD);
             explorationPanel.requestInputFocus();
         });
@@ -96,7 +96,11 @@ public class GameWindow extends JFrame {
     /** Switch to the combat view and route System.out to the combat log. */
     public void switchToCombat() {
         SwingUtilities.invokeLater(() -> {
-            outputStream.setTarget(combatPanel.getOutputArea());
+            JTextArea combatArea = combatPanel.getOutputArea();
+            outputStream.setConsumer(text -> {
+                combatArea.append(text);
+                combatArea.setCaretPosition(combatArea.getDocument().getLength());
+            });
             cardLayout.show(cardPanel, COMBAT_CARD);
             combatPanel.requestInputFocus();
         });
@@ -107,20 +111,20 @@ public class GameWindow extends JFrame {
     // -------------------------------------------------------------------------
 
     /**
-     * OutputStream whose target can be hot-swapped at runtime.
-     * All appends are dispatched via invokeLater so the game thread never
+     * OutputStream whose consumer can be hot-swapped at runtime.
+     * All writes are dispatched via invokeLater so the game thread never
      * touches Swing state directly.
      */
     private static class TextAreaStream extends OutputStream {
 
-        private volatile JTextArea target;
+        private volatile Consumer<String> consumer;
 
-        TextAreaStream(JTextArea initial) {
-            this.target = initial;
+        TextAreaStream(Consumer<String> initial) {
+            this.consumer = initial;
         }
 
-        void setTarget(JTextArea ta) {
-            this.target = ta;
+        void setConsumer(Consumer<String> c) {
+            this.consumer = c;
         }
 
         @Override
@@ -131,12 +135,9 @@ public class GameWindow extends JFrame {
         @Override
         public void write(byte[] buf, int off, int len) {
             final String text = new String(buf, off, len);
-            final JTextArea area = target;
-            if (area == null) return;
-            SwingUtilities.invokeLater(() -> {
-                area.append(text);
-                area.setCaretPosition(area.getDocument().getLength());
-            });
+            final Consumer<String> c = consumer;
+            if (c == null) return;
+            SwingUtilities.invokeLater(() -> c.accept(text));
         }
     }
 }

@@ -7,7 +7,9 @@ import events.GameEvent;
 import events.GameObserver;
 import util.AsciiArtLoader;
 
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * GuiObserver — bridges the game event system and the Swing GUI.
@@ -89,6 +91,16 @@ public class GuiObserver implements GameObserver {
             case QUEST_STARTED:
             case QUEST_COMPLETED:
                 refreshSidebar();
+                break;
+
+            case LOCATION_CHANGED:
+                // invokeAndWait blocks the game thread until the clear is done,
+                // guaranteeing the new location text prints onto a clean screen.
+                try {
+                    SwingUtilities.invokeAndWait(() -> explorationPanel.clearScreen());
+                } catch (InvocationTargetException | InterruptedException e) {
+                    SwingUtilities.invokeLater(() -> explorationPanel.clearScreen());
+                }
                 break;
 
             default:

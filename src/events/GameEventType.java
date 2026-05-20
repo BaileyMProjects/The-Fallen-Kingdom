@@ -38,5 +38,8 @@ public enum GameEventType {
     PUZZLE_SOLVED,
 
     /** Fired when the player talks to any NPC. Subject = NPC name (lowercase). */
-    TALKED_TO_NPC
+    TALKED_TO_NPC,
+
+    /** Fired immediately before displaying a new location, so the GUI can clear the screen. */
+    LOCATION_CHANGED
 }

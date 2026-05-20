@@ -166,6 +166,7 @@ public class Game {
         }
         boolean moved = world.movePlayer(dir);
         if (moved) {
+            eventManager.notify(new GameEvent(GameEventType.LOCATION_CHANGED, null));
             displayLocation();
         }
         // world.movePlayer prints the reason if movement is blocked
