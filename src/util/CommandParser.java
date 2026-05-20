@@ -127,7 +127,7 @@ public class CommandParser {
                 return new Command(CommandType.HELP, new String[0]);
 
             // ── Meta ─────────────────────────────────────────────────────────
-            case "quit": case "exit": case "bye": case "q": case "leave":
+            case "quit": case "exit": case "bye": case "q":
                 return new Command(CommandType.QUIT, new String[0]);
 
             // ── Unknown ──────────────────────────────────────────────────────
