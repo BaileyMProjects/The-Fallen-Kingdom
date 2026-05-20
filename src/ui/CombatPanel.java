@@ -2,6 +2,7 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
 /**
@@ -36,6 +37,9 @@ public class CombatPanel extends JPanel {
     private final JLabel       enemyHpLabel;
     private final JTextArea    outputArea;
     private final JTextField   inputField;
+
+    private final ConcurrentLinkedQueue<Character> charQueue = new ConcurrentLinkedQueue<>();
+    private final Timer typewriterTimer;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -90,6 +94,16 @@ public class CombatPanel extends JPanel {
         JScrollPane logScroll = new JScrollPane(outputArea);
         logScroll.setBorder(BorderFactory.createLineBorder(new Color(55, 35, 75)));
         logScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Typewriter — slightly faster than exploration for snappier combat feel
+        typewriterTimer = new Timer(10, e -> {
+            Character c = charQueue.poll();
+            if (c != null) {
+                outputArea.append(String.valueOf(c));
+                outputArea.setCaretPosition(outputArea.getDocument().getLength());
+            }
+        });
+        typewriterTimer.start();
 
         // Centre pane: HP bars on top, log below
         JPanel centrePane = new JPanel(new BorderLayout(0, 0));
@@ -149,6 +163,14 @@ public class CombatPanel extends JPanel {
 
     /** The JTextArea that System.out is redirected into during combat. */
     public JTextArea getOutputArea() { return outputArea; }
+
+    /**
+     * Enqueues text for the typewriter to drip onto the combat log.
+     * Called on the EDT via TextAreaStream.
+     */
+    public void appendText(String text) {
+        for (char c : text.toCharArray()) charQueue.offer(c);
+    }
 
     public void requestInputFocus() {
         SwingUtilities.invokeLater(inputField::requestFocusInWindow);

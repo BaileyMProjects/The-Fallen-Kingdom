@@ -96,11 +96,7 @@ public class GameWindow extends JFrame {
     /** Switch to the combat view and route System.out to the combat log. */
     public void switchToCombat() {
         SwingUtilities.invokeLater(() -> {
-            JTextArea combatArea = combatPanel.getOutputArea();
-            outputStream.setConsumer(text -> {
-                combatArea.append(text);
-                combatArea.setCaretPosition(combatArea.getDocument().getLength());
-            });
+            outputStream.setConsumer(combatPanel::appendText);
             cardLayout.show(cardPanel, COMBAT_CARD);
             combatPanel.requestInputFocus();
         });

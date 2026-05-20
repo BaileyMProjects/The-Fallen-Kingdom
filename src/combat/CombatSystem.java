@@ -56,21 +56,23 @@ public class CombatSystem {
      *         {@code false} if the player was killed
      */
     public boolean executeCombat(Player player, Enemy enemy, InputHandler inputHandler) {
-        System.out.println("\n========================================");
-        System.out.println("  COMBAT: " + enemy.getName());
-        System.out.println("========================================");
-
         // OBSERVER PATTERN: GUI listens for this to switch to CombatPanel
         // and load the enemy's ASCII art.  Enemy object passed as context.
         eventManager.notify(new GameEvent(GameEventType.COMBAT_STARTED, enemy.getName(), enemy));
+        pause(400); // let the GUI finish switching panels before text flows in
+
+        System.out.println("\n  A " + enemy.getName() + " blocks your path!");
+        pause(900);
+        System.out.println("  Prepare yourself — combat begins!\n");
+        pause(1000);
 
         while (player.isAlive() && enemy.isAlive()) {
             printCombatStatus(player, enemy);
+            pause(500);
 
             boolean validAction = false;
             while (!validAction) {
                 System.out.println("\n  [A] Attack    [U] Use item    [R] Run");
-                System.out.print("  > ");
                 String input = inputHandler.readInput().toLowerCase().trim();
 
                 switch (input) {
@@ -87,7 +89,7 @@ public class CombatSystem {
                         if (attemptFlee(player, enemy, inputHandler)) {
                             eventManager.notify(new GameEvent(
                                     GameEventType.COMBAT_ENDED, enemy.getName()));
-                            return true;   // player escaped safely
+                            return true;
                         }
                         validAction = true;
                         break;
@@ -103,7 +105,9 @@ public class CombatSystem {
             // STRATEGY PATTERN: the enemy attacks using whatever strategy was
             // injected by EnemyFactory — no if/else on enemy type here.
             // ----------------------------------------------------------------
+            pause(700);
             enemyAttack(enemy, player);
+            pause(800);
         }
 
         if (!player.isAlive()) {
@@ -114,7 +118,9 @@ public class CombatSystem {
 
         // Enemy defeated
         onEnemyDefeated(player, enemy);
+        pause(600);
         eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
+        pause(400); // let GUI switch back before loot text prints
         return true;
     }
 
@@ -124,20 +130,30 @@ public class CombatSystem {
 
     private void playerAttack(Player player, Enemy enemy) {
         int damage = Math.max(1, player.getAttackPower() - enemy.getDefense());
+        System.out.println("\n  You strike " + enemy.getName() + "...");
+        pause(750);
         enemy.takeDamage(damage);
-        System.out.println("\n  You strike " + enemy.getName() + " for " + damage + " damage.");
+        System.out.println("  Direct hit! " + damage + " damage dealt.");
+        pause(400);
+        System.out.println("  " + enemy.getName() + " HP: " + Math.max(0, enemy.getHealth()) + "/" + enemy.getMaxHealth());
         if (!enemy.isAlive()) {
-            System.out.println("  " + enemy.getName() + " is defeated!");
+            pause(700);
+            System.out.println("\n  " + enemy.getName() + " has been defeated!");
         }
     }
 
     private void enemyAttack(Enemy enemy, Player player) {
         // STRATEGY PATTERN applied here
         int damage = enemy.getAttackStrategy().calculateDamage(enemy, player);
+        System.out.println("\n  " + enemy.getName() + " attacks!");
+        pause(750);
         player.takeDamage(damage);
-        System.out.println("  " + enemy.getName() + " attacks you for " + damage + " damage.");
+        System.out.println("  " + enemy.getName() + " deals " + damage + " damage to you.");
+        pause(400);
+        System.out.println("  Your HP: " + Math.max(0, player.getHealth()) + "/" + player.getMaxHealth());
         if (!player.isAlive()) {
-            System.out.println("  You have been defeated...");
+            pause(700);
+            System.out.println("\n  You have been defeated...");
         }
     }
 
@@ -186,13 +202,20 @@ public class CombatSystem {
      * @return true if the player successfully escaped
      */
     private boolean attemptFlee(Player player, Enemy enemy, InputHandler inputHandler) {
+        System.out.println("\n  You attempt to flee...");
+        pause(900);
         if (Math.random() < 0.5) {
-            System.out.println("\n  You successfully flee from " + enemy.getName() + "!");
+            System.out.println("  You successfully escape from " + enemy.getName() + "!");
             return true;
         }
-        System.out.println("\n  You failed to escape!");
+        System.out.println("  " + enemy.getName() + " cuts off your escape!");
+        pause(600);
         enemyAttack(enemy, player);
         return false;
+    }
+
+    private static void pause(int ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 
     // -------------------------------------------------------------------------

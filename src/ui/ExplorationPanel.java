@@ -2,6 +2,7 @@ package ui;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Consumer;
 
 /**
@@ -31,9 +32,11 @@ public class ExplorationPanel extends JPanel {
     private final JTextArea     sidebarQuests;
     private final JTextField    inputField;
 
-    private final StringBuilder fullHistory  = new StringBuilder();
-    private final StringBuilder currentPage  = new StringBuilder();
-    private boolean             historyMode  = false;
+    private final StringBuilder                  fullHistory    = new StringBuilder();
+    private final StringBuilder                  currentPage    = new StringBuilder();
+    private boolean                              historyMode    = false;
+    private final ConcurrentLinkedQueue<Character> charQueue    = new ConcurrentLinkedQueue<>();
+    private final Timer                          typewriterTimer;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -55,6 +58,16 @@ public class ExplorationPanel extends JPanel {
         JScrollPane outputScroll = new JScrollPane(outputArea);
         outputScroll.setBorder(BorderFactory.createEmptyBorder());
         outputScroll.getVerticalScrollBar().setUnitIncrement(16);
+
+        // Typewriter — drip one char every 14 ms onto the output area
+        typewriterTimer = new Timer(14, e -> {
+            Character c = charQueue.poll();
+            if (c != null) {
+                outputArea.append(String.valueOf(c));
+                outputArea.setCaretPosition(outputArea.getDocument().getLength());
+            }
+        });
+        typewriterTimer.start();
 
         // ── Sidebar ──────────────────────────────────────────────────────────
         sidebarStats  = buildSidebarText();
@@ -129,15 +142,16 @@ public class ExplorationPanel extends JPanel {
     }
 
     /**
-     * Appends text to both the full history and the current page.
-     * Must be called on the EDT. Used by GameWindow's TextAreaStream.
+     * Enqueues text for the typewriter to drip onto the screen character by character.
+     * Also writes immediately to fullHistory and currentPage so the history toggle
+     * always contains the complete text regardless of display state.
+     * Must be called on the EDT (dispatched there by TextAreaStream).
      */
     public void appendText(String text) {
         fullHistory.append(text);
         currentPage.append(text);
         if (!historyMode) {
-            outputArea.append(text);
-            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+            for (char c : text.toCharArray()) charQueue.offer(c);
         }
     }
 
@@ -148,6 +162,7 @@ public class ExplorationPanel extends JPanel {
     public void clearScreen() {
         fullHistory.append("\n--- [ Previous location ] ---\n\n");
         currentPage.setLength(0);
+        charQueue.clear();
         if (!historyMode) {
             outputArea.setText("");
         }
@@ -158,6 +173,7 @@ public class ExplorationPanel extends JPanel {
      * Called on the EDT when the player types "history" or "log".
      */
     public void toggleHistory() {
+        charQueue.clear();
         historyMode = !historyMode;
         if (historyMode) {
             outputArea.setText(fullHistory.toString());
