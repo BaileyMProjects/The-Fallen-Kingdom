@@ -53,9 +53,10 @@ public abstract class Item {
     // Getters
     // -------------------------------------------------------------------------
 
-    public String getName()        { return name; }
-    public String getDescription() { return description; }
-    public int    getValue()       { return value; }
+    public String getName()           { return name; }
+    public String getDescription()    { return description; }
+    public String getRawDescription() { return description; }
+    public int    getValue()          { return value; }
 
     @Override
     public String toString() {
