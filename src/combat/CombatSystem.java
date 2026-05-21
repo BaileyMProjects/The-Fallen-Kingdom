@@ -2,9 +2,12 @@ package combat;
 
 import characters.Enemy;
 import characters.Player;
+import enchantments.ArmourEnchantment;
+import enchantments.WeaponEnchantment;
 import events.EventManager;
 import events.GameEvent;
 import events.GameEventType;
+import items.Armour;
 import items.Item;
 import items.Potion;
 import util.InputHandler;
@@ -35,7 +38,13 @@ public class CombatSystem {
     private static final double BASE_MISS_CHANCE = 0.10;
 
     private final EventManager eventManager;
-    private double             enemyDamageMultiplier = 1.0;
+    private double  enemyDamageMultiplier = 1.0;
+
+    // Per-combat state — reset at the start of every executeCombat call
+    private int     poisonTurnsRemaining = 0;
+    private int     poisonDamagePerTurn  = 0;
+    private boolean enemySlowed          = false;
+    private boolean enemyStunned         = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -66,6 +75,11 @@ public class CombatSystem {
     public boolean executeCombat(Player player, Enemy enemy, InputHandler inputHandler) {
         // OBSERVER PATTERN: GUI listens for this to switch to CombatPanel
         // and load the enemy's ASCII art.  Enemy object passed as context.
+        poisonTurnsRemaining = 0;
+        poisonDamagePerTurn  = 0;
+        enemySlowed          = false;
+        enemyStunned         = false;
+
         eventManager.notify(new GameEvent(GameEventType.COMBAT_STARTED, enemy.getName(), enemy));
         pause(400); // let the GUI finish switching panels before text flows in
 
@@ -75,6 +89,9 @@ public class CombatSystem {
         pause(1000);
 
         while (player.isAlive() && enemy.isAlive()) {
+            applyRegen(player);
+            applyPoison(enemy);
+            if (!enemy.isAlive()) break;
             printCombatStatus(player, enemy);
             pause(500);
 
@@ -147,6 +164,34 @@ public class CombatSystem {
         enemy.takeDamage(damage);
         System.out.println("  Direct hit! " + damage + " damage dealt.");
         pause(400);
+
+        // Weapon enchantment on-hit effects
+        if (player.getEquippedWeapon() instanceof WeaponEnchantment) {
+            WeaponEnchantment we = (WeaponEnchantment) player.getEquippedWeapon();
+
+            if (we.getLifestealRate() > 0) {
+                int healed = player.heal((int)(damage * we.getLifestealRate()));
+                if (healed > 0)
+                    System.out.println("  Lifesteal restores " + healed + " HP.");
+            }
+
+            if (we.getPoisonDamage() > 0 && poisonTurnsRemaining == 0) {
+                poisonDamagePerTurn  = we.getPoisonDamage();
+                poisonTurnsRemaining = we.getPoisonTurns();
+                System.out.println("  Your weapon's venom poisons " + enemy.getName() + "!");
+            }
+
+            if (we.getSlowChance() > 0 && Math.random() < we.getSlowChance()) {
+                enemySlowed = true;
+                System.out.println("  Frost seeps into " + enemy.getName() + " — they are slowed!");
+            }
+
+            if (we.getStunChance() > 0 && Math.random() < we.getStunChance()) {
+                enemyStunned = true;
+                System.out.println("  The force of your blow stuns " + enemy.getName() + "!");
+            }
+        }
+
         System.out.println("  " + enemy.getName() + " HP: " + Math.max(0, enemy.getHealth()) + "/" + enemy.getMaxHealth());
         if (!enemy.isAlive()) {
             pause(700);
@@ -155,6 +200,20 @@ public class CombatSystem {
     }
 
     private void enemyAttack(Enemy enemy, Player player) {
+        // Check stun — enemy loses entire turn
+        if (enemyStunned) {
+            System.out.println("\n  " + enemy.getName() + " is stunned and cannot attack!");
+            enemyStunned = false;
+            enemySlowed  = false;
+            return;
+        }
+        // Check slow — enemy loses their attack this turn
+        if (enemySlowed) {
+            System.out.println("\n  " + enemy.getName() + " is slowed by the frost and loses their turn!");
+            enemySlowed = false;
+            return;
+        }
+
         // Base 10% miss + any bonus from the player's equipped armour (e.g. Evasive Boots)
         double totalMiss = BASE_MISS_CHANCE + player.getEvasionBonus();
         if (Math.random() < totalMiss) {
@@ -169,6 +228,19 @@ public class CombatSystem {
         player.takeDamage(damage);
         System.out.println("  " + enemy.getName() + " deals " + damage + " damage to you.");
         pause(400);
+
+        // Armour enchantment reflect
+        double reflectRate = getTotalReflectRate(player);
+        if (reflectRate > 0 && enemy.isAlive()) {
+            int reflected = Math.max(1, (int)(damage * reflectRate));
+            enemy.takeDamage(reflected);
+            System.out.println("  Your enchanted armour reflects " + reflected + " damage!");
+            if (!enemy.isAlive()) {
+                pause(700);
+                System.out.println("\n  " + enemy.getName() + " has been defeated by reflected damage!");
+            }
+        }
+
         System.out.println("  Your HP: " + Math.max(0, player.getHealth()) + "/" + player.getMaxHealth());
         if (!player.isAlive()) {
             pause(700);
@@ -231,6 +303,53 @@ public class CombatSystem {
         pause(600);
         enemyAttack(enemy, player);
         return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Enchantment effect helpers
+    // -------------------------------------------------------------------------
+
+    private void applyRegen(Player player) {
+        int regen = getTotalRegenAmount(player);
+        if (regen > 0 && player.getHealth() < player.getMaxHealth()) {
+            int healed = player.heal(regen);
+            if (healed > 0)
+                System.out.println("\n  Your armour's magic restores " + healed + " HP.");
+        }
+    }
+
+    private void applyPoison(Enemy enemy) {
+        if (poisonTurnsRemaining <= 0) return;
+        System.out.println("\n  " + enemy.getName() + " writhes as venom courses through them!");
+        pause(400);
+        enemy.takeDamage(poisonDamagePerTurn);
+        poisonTurnsRemaining--;
+        System.out.println("  Poison deals " + poisonDamagePerTurn + " damage."
+                + " (" + poisonTurnsRemaining + " turn(s) remaining)");
+        if (!enemy.isAlive()) {
+            pause(700);
+            System.out.println("\n  " + enemy.getName() + " has succumbed to the poison!");
+        }
+    }
+
+    private double getTotalReflectRate(Player player) {
+        double rate = 0.0;
+        Armour[] slots = { player.getEquippedHead(), player.getEquippedTorso(), player.getEquippedLegs() };
+        for (Armour a : slots) {
+            if (a instanceof ArmourEnchantment)
+                rate += ((ArmourEnchantment) a).getReflectRate();
+        }
+        return rate;
+    }
+
+    private int getTotalRegenAmount(Player player) {
+        int total = 0;
+        Armour[] slots = { player.getEquippedHead(), player.getEquippedTorso(), player.getEquippedLegs() };
+        for (Armour a : slots) {
+            if (a instanceof ArmourEnchantment)
+                total += ((ArmourEnchantment) a).getRegenAmount();
+        }
+        return total;
     }
 
     private static void pause(int ms) {

@@ -11,6 +11,7 @@ import events.PlayerObserver;
 import events.QuestObserver;
 import events.GameEvent;
 import events.GameEventType;
+import enchantments.WeaponEnchantment;
 import items.Item;
 import items.ItemFactory;
 import items.ItemType;
@@ -327,8 +328,15 @@ public class Game {
             System.out.println("You defeated " + enemy.getName() + "!");
 
             if (enemy.getGoldDrop() > 0) {
-                player.addGold(enemy.getGoldDrop());
-                System.out.println("You found " + enemy.getGoldDrop() + " gold.");
+                double mult = (player.getEquippedWeapon() instanceof WeaponEnchantment)
+                        ? ((WeaponEnchantment) player.getEquippedWeapon()).getGoldMultiplier()
+                        : 1.0;
+                int gold = (int)(enemy.getGoldDrop() * mult);
+                player.addGold(gold);
+                if (mult > 1.0)
+                    System.out.println("Your Lucky enchantment glints — you found " + gold + " gold!");
+                else
+                    System.out.println("You found " + gold + " gold.");
             }
 
             boolean isTreeProtector = enemy.getName().equalsIgnoreCase("Tree Protector");
