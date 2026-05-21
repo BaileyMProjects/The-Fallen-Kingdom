@@ -27,5 +27,8 @@ public enum ItemType {
 
     // Quest items
     ANCIENT_RELIC,
-    FOREST_GEM
+    FOREST_GEM,
+
+    // Crafting materials
+    SHADOW_CRYSTAL
 }

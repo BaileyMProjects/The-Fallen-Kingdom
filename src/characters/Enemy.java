@@ -7,6 +7,7 @@ import items.Item;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Enemy — a hostile character the player can fight.
@@ -22,9 +23,13 @@ import java.util.List;
  */
 public class Enemy extends Character {
 
+    private static final Random RNG = new Random();
+
     private AttackStrategy  attackStrategy;
     private final int        goldDrop;
     private final List<Item> lootItems;
+    private final List<Item>   chanceLootItems;
+    private final List<Double> chanceLootChances;
     private final String     description;
 
     // -------------------------------------------------------------------------
@@ -34,10 +39,12 @@ public class Enemy extends Character {
     public Enemy(String name, int maxHealth, int attackPower, int defense,
                  int goldDrop, String description) {
         super(name, maxHealth, attackPower, defense);
-        this.goldDrop       = goldDrop;
-        this.description    = description;
-        this.lootItems      = new ArrayList<>();
-        this.attackStrategy = new RandomStrategy();  // safe default until Factory sets it
+        this.goldDrop          = goldDrop;
+        this.description       = description;
+        this.lootItems         = new ArrayList<>();
+        this.chanceLootItems   = new ArrayList<>();
+        this.chanceLootChances = new ArrayList<>();
+        this.attackStrategy    = new RandomStrategy();  // safe default until Factory sets it
     }
 
     // -------------------------------------------------------------------------
@@ -63,6 +70,29 @@ public class Enemy extends Character {
     public void addLootItem(Item item)   { lootItems.add(item); }
     public List<Item> getLootItems()     { return Collections.unmodifiableList(lootItems); }
     public int        getGoldDrop()      { return goldDrop; }
+
+    /**
+     * Registers a loot item that drops with the given probability (0.0–1.0).
+     * Rolled once per enemy defeat in Game.java.
+     */
+    public void addChanceLoot(Item item, double chance) {
+        chanceLootItems.add(item);
+        chanceLootChances.add(Math.min(1.0, Math.max(0.0, chance)));
+    }
+
+    /**
+     * Rolls all chance-based loot entries and returns every item that dropped.
+     * Called by Game after the guaranteed loot loop.
+     */
+    public List<Item> rollChanceLoot() {
+        List<Item> dropped = new ArrayList<>();
+        for (int i = 0; i < chanceLootItems.size(); i++) {
+            if (RNG.nextDouble() < chanceLootChances.get(i)) {
+                dropped.add(chanceLootItems.get(i));
+            }
+        }
+        return dropped;
+    }
 
     // -------------------------------------------------------------------------
     // Boss flag — overridden to true in the Boss subclass

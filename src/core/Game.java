@@ -344,6 +344,11 @@ public class Game {
                 }
             }
 
+            for (Item chanceDrop : enemy.rollChanceLoot()) {
+                world.getCurrentLocation().addItem(chanceDrop);
+                System.out.println(enemy.getName() + " also dropped: " + chanceDrop.getName() + ".");
+            }
+
             if (isTreeProtector) {
                 // Remove the Tree Protector NPC version as well
                 NPC npc = world.getCurrentLocation().findNPC("Tree Protector");

@@ -59,6 +59,9 @@ public class ItemFactory {
             case ANCIENT_RELIC:  return createAncientRelic();
             case FOREST_GEM:     return createForestGem();
 
+            // Crafting materials
+            case SHADOW_CRYSTAL: return createShadowCrystal();
+
             default:
                 throw new IllegalArgumentException("Unknown item type: " + type);
         }
@@ -197,6 +200,16 @@ public class ItemFactory {
      * Has no buy price (unobtainable from shops) but triggers special merchant
      * dialogue and a gold reward of 50–100 when sold to Griswold.
      */
+    private static QuestItem createShadowCrystal() {
+        return new QuestItem(
+            "Shadow Crystal",
+            "A shard of crystallised shadow energy, still pulsing faintly with dark magic.\n" +
+            "  An enchanter could use this to bind power to your equipment.",
+            "A Shadow Crystal — raw, concentrated shadow energy given physical form.\n" +
+            "  The enchanter in the merchant's village can use this to enchant your gear."
+        );
+    }
+
     private static QuestItem createForestGem() {
         return new QuestItem(
             "Forest Gem",
