@@ -9,10 +9,10 @@ package core;
  */
 public enum Difficulty {
 
-    //                label    description                                    hp   atk  def  gold  dmgMul  goldMul  enchCost  respawnCost  divineEnchCost
-    EASY  ("Easy",   "Generous HP and starting gold. Great for new players.", 150,  12,  8,   50,  0.75,   1.00,    30,       20,          120),
-    MEDIUM("Medium", "The intended experience. Balanced challenge.",           100,  10,  5,    0,  1.00,   0.80,    50,       15,          170),
-    HARD  ("Hard",   "Low HP, no starting gold. For seasoned adventurers.",    70,   8,  3,    0,  1.30,   0.60,    75,       12,          250);
+    //                label    description                                    hp   atk  def  gold  dmgMul  goldMul  enchCost  respawnCost  divineEnchCost  divineArenaRespawnCost
+    EASY  ("Easy",   "Generous HP and starting gold. Great for new players.", 150,  12,  8,   50,  0.75,   1.00,    30,       20,          120,             45),
+    MEDIUM("Medium", "The intended experience. Balanced challenge.",           100,  10,  5,    0,  1.00,   0.80,    50,       15,          170,             38),
+    HARD  ("Hard",   "Low HP, no starting gold. For seasoned adventurers.",    70,   8,  3,    0,  1.30,   0.60,    75,       12,          250,             32);
 
     // -------------------------------------------------------------------------
     // Data
@@ -34,6 +34,8 @@ public enum Difficulty {
     public final int    arenaRespawnCost;
     /** Gold cost to enchant an item at Luminara the divine enchanter. */
     public final int    divineEnchantCost;
+    /** Gold cost to respawn a wave of enemies in the Celestial Barracks arena. */
+    public final int    divineArenaRespawnCost;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -41,17 +43,19 @@ public enum Difficulty {
 
     Difficulty(String label, String description,
                int hp, int atk, int def, int gold,
-               double dmgMul, double goldMul, int enchCost, int respawnCost, int divineEnchCost) {
-        this.label                = label;
-        this.description          = description;
-        this.startHp              = hp;
-        this.startAttack          = atk;
-        this.startDefense         = def;
-        this.startGold            = gold;
-        this.enemyDamageMultiplier = dmgMul;
-        this.goldDropMultiplier   = goldMul;
-        this.enchantCost          = enchCost;
-        this.arenaRespawnCost     = respawnCost;
-        this.divineEnchantCost    = divineEnchCost;
+               double dmgMul, double goldMul, int enchCost, int respawnCost,
+               int divineEnchCost, int divineArenaRespawnCost) {
+        this.label                    = label;
+        this.description              = description;
+        this.startHp                  = hp;
+        this.startAttack              = atk;
+        this.startDefense             = def;
+        this.startGold                = gold;
+        this.enemyDamageMultiplier    = dmgMul;
+        this.goldDropMultiplier       = goldMul;
+        this.enchantCost              = enchCost;
+        this.arenaRespawnCost         = respawnCost;
+        this.divineEnchantCost        = divineEnchCost;
+        this.divineArenaRespawnCost   = divineArenaRespawnCost;
     }
 }

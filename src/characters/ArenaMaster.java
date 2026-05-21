@@ -38,6 +38,11 @@ public class ArenaMaster extends NPC {
         });
     }
 
+    /** Protected constructor for subclasses that supply their own dialogue. */
+    protected ArenaMaster(String name, String description, String[] dialogue) {
+        super(name, description, dialogue);
+    }
+
     // -------------------------------------------------------------------------
     // Respawn
     // -------------------------------------------------------------------------

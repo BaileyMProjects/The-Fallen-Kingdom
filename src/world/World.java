@@ -1,6 +1,8 @@
 package world;
 
 import characters.ArenaMaster;
+import characters.CelestialWarden;
+import characters.DivineEnchanter;
 import characters.Enchanter;
 import characters.EnemyFactory;
 import characters.EnemyType;
@@ -28,17 +30,27 @@ import java.util.Map;
  * World is the single source of truth for where everything is in the game.
  * Game.java delegates all movement and location queries here.
  *
- * Map layout (10 locations):
+ * Map layout (19 locations):
  *
- *                    [Forgotten Battlefield]
- *                           |  E
- *   [Mystic Glade] --S-- [Dark Forest] --N-- [Ancient Ruins]
- *                           |  E
- *                   [Underground Dungeon]
- *                           |  N (locked: Ancient Key)
+ *   [Vault] --W-- [Radiant Cathedral] --E-- [Celestial Barracks]
+ *                        |  S                       |  S
+ *                  [Sunken Shrine] --E-- [Forge]  [Sanctum of the Arbiter]
+ *                        |  S
+ *                  [Celestial Gate]
+ *                        |  S
+ *                 [Forgotten Battlefield] --W-- [Ancient Ruins]
+ *                                                     |  S
+ *   [Mystic Glade] --S-- [Dark Forest] ---------------+
+ *                              |  E
+ *                      [Underground Dungeon]
+ *                              |  N (locked: Ancient Key)
  *   [Cursed Archives] --W-- [Corrupted Castle] --E-- [Shadow Barracks]
- *                           |  N (locked: puzzle)
- *                    [Shadow Throne Room]
+ *                              |  N (locked: puzzle)
+ *                       [Shadow Throne Room]
+ *
+ *   [Village] --E-- [Dark Forest]
+ *   [Village] --S-- [Merchant Village] --S-- [Proving Grounds]
+ *   [Dark Forest] --S-- [Mystic Glade]
  */
 public class World {
 
@@ -145,6 +157,56 @@ public class World {
             "Shadow creatures lurk in caged pens along the far wall, waiting to\n" +
             "be released. The air tastes of iron and something darker.");
 
+        // ── Divine realm locations ──────────────────────────────────────────
+
+        Location celestialGate = new Location(LocationId.CELESTIAL_GATE, "Celestial Gate",
+            "An immense archway of pale stone covered in still-glowing celestial script.\n" +
+            "Beyond it, the air vibrates with divine resonance — a second kingdom\n" +
+            "hidden above the mortal realm, now twisted by corruption. A worn monk\n" +
+            "kneels before the arch in silent prayer. The path north leads deeper in.");
+
+        Location sunkenShrine = new Location(LocationId.SUNKEN_SHRINE, "Sunken Shrine",
+            "A once-sacred shrine half-submerged in glowing golden water that neither\n" +
+            "flows nor evaporates. Stone columns rise from its surface carved with\n" +
+            "faded celestial runes. At the shrine's heart a narrow altar holds a\n" +
+            "riddle inscribed in light — still active, still waiting. Corrupted\n" +
+            "paladins stand vigil among the columns, drawn here by the old magic.");
+
+        Location divineForge = new Location(LocationId.DIVINE_FORGE, "Divine Forge",
+            "A forge of white stone and golden filigree, its flames burning a pure\n" +
+            "celestial blue. The air smells of ozone and something ancient — the\n" +
+            "scent of divine power made tangible. Tools of incredible precision hang\n" +
+            "from the walls. A merchant offers the finest divine-realm gear from\n" +
+            "a side alcove. This place is safe — the corruption cannot reach the flame.");
+
+        Location radiantCathedral = new Location(LocationId.RADIANT_CATHEDRAL, "Radiant Cathedral",
+            "The cathedral's vaulted ceiling stretches impossibly high, its stained-glass\n" +
+            "windows shattered and dark. Where holy light once fell in coloured patterns\n" +
+            "on white stone, shadow-gold corruption now bleeds from the cracks. Broken\n" +
+            "pews lead toward a scorched altar. The guardians here were once the most\n" +
+            "devout — now they are the most dangerous.");
+
+        Location celestialBarracks = new Location(LocationId.CELESTIAL_BARRACKS, "Celestial Barracks",
+            "A vast barracks where the celestial guard once rested between vigils. The\n" +
+            "bunks are made of interlocked bone and gold leaf, and each weapon rack\n" +
+            "still holds equipment of terrifying quality. A warden — barely recognisable\n" +
+            "as the man he once was — stands at the gate controls, one hand resting on\n" +
+            "a bell of pure crystal. A merchant operates from the rear of the hall.");
+
+        Location vaultOfFallen = new Location(LocationId.VAULT_OF_THE_FALLEN, "Vault of the Fallen",
+            "A hushed chamber lined with suits of armour on stone pedestals — the\n" +
+            "equipment of paladins who gave everything for the celestial order. Their\n" +
+            "names are carved in the walls in a language older than the kingdom. Dust\n" +
+            "drifts through shafts of pale light. Two guardians remain, still loyal\n" +
+            "to their vigil even in the grip of corruption.");
+
+        Location sanctumArbiter = new Location(LocationId.SANCTUM_OF_THE_ARBITER, "Sanctum of the Arbiter",
+            "A circular chamber of blinding white marble, its ceiling lost in a haze\n" +
+            "of golden light. At the centre stands a throne of interlocked haloes —\n" +
+            "and upon it sits the Arbiter. His armour gleams with terrible radiance.\n" +
+            "He turns to face you with eyes like collapsing suns. There is no mercy\n" +
+            "left in them — only the weight of a broken divine order.");
+
         // ================================================================
         // CONNECT LOCATIONS
         // ================================================================
@@ -197,6 +259,36 @@ public class World {
         castle.setExit(Direction.WEST, cursedArchives);
         cursedArchives.setExit(Direction.EAST, castle);
 
+        // ── Divine realm connections ────────────────────────────────────────
+
+        // Forgotten Battlefield ↔ Celestial Gate
+        forgottenBattlefield.setExit(Direction.NORTH, celestialGate);
+        celestialGate.setExit(Direction.SOUTH, forgottenBattlefield);
+
+        // Celestial Gate ↔ Sunken Shrine
+        celestialGate.setExit(Direction.NORTH, sunkenShrine);
+        sunkenShrine.setExit(Direction.SOUTH, celestialGate);
+
+        // Sunken Shrine ↔ Divine Forge
+        sunkenShrine.setExit(Direction.EAST, divineForge);
+        divineForge.setExit(Direction.WEST, sunkenShrine);
+
+        // Sunken Shrine ↔ Radiant Cathedral
+        sunkenShrine.setExit(Direction.NORTH, radiantCathedral);
+        radiantCathedral.setExit(Direction.SOUTH, sunkenShrine);
+
+        // Radiant Cathedral ↔ Vault of the Fallen
+        radiantCathedral.setExit(Direction.WEST, vaultOfFallen);
+        vaultOfFallen.setExit(Direction.EAST, radiantCathedral);
+
+        // Radiant Cathedral ↔ Celestial Barracks
+        radiantCathedral.setExit(Direction.EAST, celestialBarracks);
+        celestialBarracks.setExit(Direction.WEST, radiantCathedral);
+
+        // Celestial Barracks ↔ Sanctum of the Arbiter
+        celestialBarracks.setExit(Direction.SOUTH, sanctumArbiter);
+        sanctumArbiter.setExit(Direction.NORTH, celestialBarracks);
+
         // ================================================================
         // POPULATE — NPCs
         // ================================================================
@@ -220,6 +312,8 @@ public class World {
         merchant.addShopItem(ItemFactory.create(ItemType.LEATHER_CHESTPLATE));
         merchant.addShopItem(ItemFactory.create(ItemType.HEALTH_POTION));
         merchant.addShopItem(ItemFactory.create(ItemType.ELIXIR));
+        merchant.addShopItem(ItemFactory.create(ItemType.VENOM_FLASK));
+        merchant.addShopItem(ItemFactory.create(ItemType.SMOKE_BOMB));
         village.addNPC(merchant);
 
         // Merchant Village — Seraphina the Enchantress
@@ -242,6 +336,7 @@ public class World {
         aldric.addShopItem(ItemFactory.create(ItemType.LEATHER_GREAVES));
         aldric.addShopItem(ItemFactory.create(ItemType.GREATER_ELIXIR));
         aldric.addShopItem(ItemFactory.create(ItemType.SHADOW_CRYSTAL));
+        aldric.addShopItem(ItemFactory.create(ItemType.BATTLE_TONIC));
         merchantVillage.addNPC(aldric);
 
         // Proving Grounds — ArenaMaster NPC
@@ -279,6 +374,95 @@ public class World {
                 "Go. End this nightmare. I will hold on a little longer."
             }
         ));
+
+        // ── Divine realm NPCs ───────────────────────────────────────────────
+
+        // Celestial Gate — Brother Aldus (lore guide)
+        celestialGate.addNPC(new NPC(
+            "Brother Aldus",
+            "A robed monk kneeling before the great arch, his skin faintly luminescent.\n" +
+            "  He looks up with sorrowful, knowing eyes.",
+            new String[]{
+                "You bear the mark of a survivor — few reach this gate. Beyond lies the " +
+                "Celestial Realm, a land of divine light twisted by a great corruption. " +
+                "The Arbiter, once our highest judge, now sits at the heart of the Sanctum, " +
+                "lost to grief and celestial madness. Tread carefully — the guardians here " +
+                "no longer know friend from foe.",
+                "In the Divine Forge to the east of the Sunken Shrine, Luminara the Soulsmith " +
+                "still tends her flame. She can imbue your gear with divine power far beyond " +
+                "shadow magic — but you will need a Divine Crystal and considerable gold. " +
+                "Look for Divine Crystals on fallen enemies throughout this realm.",
+                "The Vault of the Fallen lies west of the Radiant Cathedral. Our greatest " +
+                "paladins left their armour there — take it, it belongs to those who fight. " +
+                "The Sanctum of the Arbiter is south of the Barracks. Face him only when " +
+                "you are ready. I pray you succeed where we could not."
+            }
+        ));
+
+        // Divine Forge — Luminara the Soulsmith (DivineEnchanter)
+        divineForge.addNPC(new DivineEnchanter(
+            "Luminara the Soulsmith",
+            "A woman of ageless bearing, her white hair coiled with golden thread.\n" +
+            "  She works at the celestial forge with absolute precision, each movement\n" +
+            "  deliberate. Pale light streams from her fingertips as she shapes metal."
+        ));
+
+        // Divine Forge — forge merchant (level 6 required)
+        Merchant forgeMerchant = new Merchant(
+            "Rowan the Supply Keeper",
+            "A stocky, no-nonsense figure in reinforced leather, overseeing a well-organised\n" +
+            "  collection of divine-realm gear and materials."
+        );
+        forgeMerchant.setLevelRequirement(6);
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.HOLY_SPEAR));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.AUREATE_VISOR));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.BLESSED_HAUBERK));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.SACRED_GREAVES));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.DIVINE_TONIC));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.STONE_SKIN_DRAUGHT));
+        forgeMerchant.addShopItem(ItemFactory.create(ItemType.DIVINE_CRYSTAL));
+        divineForge.addNPC(forgeMerchant);
+
+        // Radiant Cathedral — Broken Seraph (lore NPC)
+        radiantCathedral.addNPC(new NPC(
+            "Broken Seraph",
+            "A once-magnificent warrior with shattered wings trailing like torn cloth.\n" +
+            "  Golden ichor stains her white robes. Her eyes burn with faint awareness.",
+            new String[]{
+                "You are still uncorrupted. How? The light here devours those who were not " +
+                "born of it — or destroys those who once were. Like me. My wings answered " +
+                "a false call — the Arbiter's decree. Now I cannot leave this place.",
+                "The Vault is to the west. Our fallen brothers left their armour on those " +
+                "pedestals — they will not need it. Take what you can carry. Better used by " +
+                "a living warrior than left to the corruption that is spreading through these halls.",
+                "If you face the Arbiter... remember he was once just. The light in his eyes " +
+                "that drives him now is not wisdom — it is grief turned to madness. Strike him " +
+                "down and let him rest. That is the only mercy left."
+            }
+        ));
+
+        // Celestial Barracks — CelestialWarden (arena NPC)
+        celestialBarracks.addNPC(new CelestialWarden(
+            "The Warden",
+            "A hulking figure in tarnished celestial plate, one hand resting on a bell\n" +
+            "  of pure crystal. His face is half-obscured by a damaged visor, his posture\n" +
+            "  still military-precise despite the corruption eating at his armour."
+        ));
+
+        // Celestial Barracks — barracks merchant (level 9 required)
+        Merchant barracksMerchant = new Merchant(
+            "Selene the Quartermaster",
+            "A sharp-eyed woman surrounded by crates of high-tier divine equipment.\n" +
+            "  Her expression makes clear she has no patience for the unprepared."
+        );
+        barracksMerchant.setLevelRequirement(9);
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.AUREATE_SWORD));
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.CORRUPTED_MACE));
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.DIVINE_TONIC));
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.BATTLE_TONIC));
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.BLINDING_POWDER));
+        barracksMerchant.addShopItem(ItemFactory.create(ItemType.DIVINE_CRYSTAL));
+        celestialBarracks.addNPC(barracksMerchant);
 
         // Tree Protector — in both NPC and enemy lists so the player can talk OR fight
         mysticGlade.addNPC(new NPC(
@@ -319,12 +503,34 @@ public class World {
 
         shadowThrone.addEnemy(EnemyFactory.create(EnemyType.SHADOW_LORD));
 
+        // ── Divine realm enemies ────────────────────────────────────────────
+
+        sunkenShrine.addEnemy(EnemyFactory.create(EnemyType.CORRUPTED_PALADIN));
+        sunkenShrine.addEnemy(EnemyFactory.create(EnemyType.CORRUPTED_PALADIN));
+        sunkenShrine.addEnemy(EnemyFactory.create(EnemyType.RADIANT_STALKER));
+
+        radiantCathedral.addEnemy(EnemyFactory.create(EnemyType.CORRUPTED_PALADIN));
+        radiantCathedral.addEnemy(EnemyFactory.create(EnemyType.CORRUPTED_PALADIN));
+        radiantCathedral.addEnemy(EnemyFactory.create(EnemyType.CELESTIAL_SENTINEL));
+        radiantCathedral.addEnemy(EnemyFactory.create(EnemyType.RADIANT_STALKER));
+
+        vaultOfFallen.addEnemy(EnemyFactory.create(EnemyType.FALLEN_SERAPH));
+        vaultOfFallen.addEnemy(EnemyFactory.create(EnemyType.CELESTIAL_SENTINEL));
+
+        sanctumArbiter.addEnemy(EnemyFactory.create(EnemyType.THE_ARBITER));
+
         // ================================================================
         // POPULATE — Ground items
         // ================================================================
 
         forgottenBattlefield.addItem(ItemFactory.create(ItemType.HEALTH_POTION));
+        forgottenBattlefield.addItem(ItemFactory.create(ItemType.BLINDING_POWDER));
         shadowBarracks.addItem(ItemFactory.create(ItemType.SHADOW_ROBE));
+
+        // Divine realm ground items
+        vaultOfFallen.addItem(ItemFactory.create(ItemType.SERAPH_CROWN));
+        vaultOfFallen.addItem(ItemFactory.create(ItemType.SANCTUM_PLATE));
+        vaultOfFallen.addItem(ItemFactory.create(ItemType.SERAPH_TASSETS));
 
         // ================================================================
         // POPULATE — Puzzles
@@ -363,6 +569,15 @@ public class World {
             null
         ));
 
+        // Sunken Shrine — celestial riddle, rewards Aureate Sword
+        sunkenShrine.setPuzzle(new RiddlePuzzle(
+            "I have a body but no arms, a head but no eyes. I shed tears but feel no " +
+            "pain, and I grow shorter as I give light. What am I?",
+            "candle",
+            ItemFactory.create(ItemType.AUREATE_SWORD),
+            null
+        ));
+
         // Cursed Archives — 4-lever shadow sequence, rewards Elixir
         cursedArchives.setPuzzle(new LeverPuzzle(
             "Shadow Archive Seals",
@@ -377,18 +592,26 @@ public class World {
         // REGISTER LOCATIONS AND SET START
         // ================================================================
 
-        locations.put(LocationId.VILLAGE,              village);
-        locations.put(LocationId.DARK_FOREST,          darkForest);
-        locations.put(LocationId.ANCIENT_RUINS,        ancientRuins);
-        locations.put(LocationId.UNDERGROUND_DUNGEON,  dungeon);
-        locations.put(LocationId.CORRUPTED_CASTLE,     castle);
-        locations.put(LocationId.SHADOW_THRONE,        shadowThrone);
-        locations.put(LocationId.MYSTIC_GLADE,         mysticGlade);
-        locations.put(LocationId.FORGOTTEN_BATTLEFIELD,forgottenBattlefield);
-        locations.put(LocationId.SHADOW_BARRACKS,      shadowBarracks);
-        locations.put(LocationId.CURSED_ARCHIVES,      cursedArchives);
-        locations.put(LocationId.MERCHANT_VILLAGE,     merchantVillage);
-        locations.put(LocationId.PROVING_GROUNDS,      provingGrounds);
+        locations.put(LocationId.VILLAGE,                 village);
+        locations.put(LocationId.DARK_FOREST,             darkForest);
+        locations.put(LocationId.ANCIENT_RUINS,           ancientRuins);
+        locations.put(LocationId.UNDERGROUND_DUNGEON,     dungeon);
+        locations.put(LocationId.CORRUPTED_CASTLE,        castle);
+        locations.put(LocationId.SHADOW_THRONE,           shadowThrone);
+        locations.put(LocationId.MYSTIC_GLADE,            mysticGlade);
+        locations.put(LocationId.FORGOTTEN_BATTLEFIELD,   forgottenBattlefield);
+        locations.put(LocationId.SHADOW_BARRACKS,         shadowBarracks);
+        locations.put(LocationId.CURSED_ARCHIVES,         cursedArchives);
+        locations.put(LocationId.MERCHANT_VILLAGE,        merchantVillage);
+        locations.put(LocationId.PROVING_GROUNDS,         provingGrounds);
+        // Divine realm
+        locations.put(LocationId.CELESTIAL_GATE,          celestialGate);
+        locations.put(LocationId.SUNKEN_SHRINE,           sunkenShrine);
+        locations.put(LocationId.DIVINE_FORGE,            divineForge);
+        locations.put(LocationId.RADIANT_CATHEDRAL,       radiantCathedral);
+        locations.put(LocationId.CELESTIAL_BARRACKS,      celestialBarracks);
+        locations.put(LocationId.VAULT_OF_THE_FALLEN,     vaultOfFallen);
+        locations.put(LocationId.SANCTUM_OF_THE_ARBITER,  sanctumArbiter);
 
         currentLocation = village;
     }

@@ -483,7 +483,7 @@ public class Game {
     private void handleRespawn() {
         ArenaMaster arena = world.getCurrentLocation().findNPCOfType(ArenaMaster.class);
         if (arena == null) {
-            System.out.println("There is no arena master here. Travel to the Proving Grounds south of Merchant's Village.");
+            System.out.println("There is no arena master here. Try the Proving Grounds or the Celestial Barracks.");
             return;
         }
         arena.respawn(player, world.getCurrentLocation(), difficulty);
@@ -514,7 +514,7 @@ public class Game {
         System.out.println("  buy <item>           Buy from a merchant");
         System.out.println("  sell <item>          Sell to a merchant");
         System.out.println("  enchant <item>       Enchant gear at an enchanter (30/50/75g + Shadow Crystal)");
-        System.out.println("  respawn              Pay to respawn enemies in the Proving Grounds arena");
+        System.out.println("  respawn              Pay to respawn enemies in an arena (Proving Grounds / Celestial Barracks)");
         System.out.println("  stats                View your character statistics");
         System.out.println("  quests               View your quest log");
         System.out.println("  help                 Show this list");
