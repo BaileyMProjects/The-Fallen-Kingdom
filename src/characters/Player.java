@@ -31,6 +31,19 @@ public class Player extends Character {
     private Armour equippedTorso;
     private Armour equippedLegs;
 
+    // Per-combat buff state — set by CombatPotion.use(), cleared by CombatSystem
+    private int     combatAttackBonus;
+    private int     combatAttackBonusTurns;
+    private int     combatDefenseBonus;
+    private int     combatDefenseBonusTurns;
+
+    // Pending enemy debuffs — written by CombatPotion.use(), read+cleared by CombatSystem
+    private int     pendingEnemyPoisonDamage;
+    private int     pendingEnemyPoisonTurns;
+    private int     pendingEnemyBlindMissBonus;  // as a percentage e.g. 30 = 30%
+    private int     pendingEnemyBlindTurns;
+    private boolean pendingEnemyStun;
+
     // -------------------------------------------------------------------------
     // Constructor
     // -------------------------------------------------------------------------
@@ -128,6 +141,83 @@ public class Player extends Character {
         if (gold < amount) return false;
         gold -= amount;
         return true;
+    }
+
+    // -------------------------------------------------------------------------
+    // Combat buff / debuff state (managed by CombatSystem each turn)
+    // -------------------------------------------------------------------------
+
+    /** Clears all per-combat state. Called by CombatSystem at the start of every fight. */
+    public void clearCombatState() {
+        combatAttackBonus        = 0;  combatAttackBonusTurns  = 0;
+        combatDefenseBonus       = 0;  combatDefenseBonusTurns = 0;
+        pendingEnemyPoisonDamage = 0;  pendingEnemyPoisonTurns = 0;
+        pendingEnemyBlindMissBonus = 0; pendingEnemyBlindTurns = 0;
+        pendingEnemyStun         = false;
+    }
+
+    /** Called by CombatPotion(BUFF_ATTACK). Overwrites any existing attack buff. */
+    public void addCombatAttackBonus(int amount, int turns) {
+        combatAttackBonus      = amount;
+        combatAttackBonusTurns = turns;
+    }
+
+    /** Called by CombatPotion(BUFF_DEFENSE). Overwrites any existing defense buff. */
+    public void addCombatDefenseBonus(int amount, int turns) {
+        combatDefenseBonus      = amount;
+        combatDefenseBonusTurns = turns;
+    }
+
+    /** Called by CombatPotion(DEBUFF_POISON). Overwrites any existing pending poison. */
+    public void setPendingEnemyPoison(int damage, int turns) {
+        pendingEnemyPoisonDamage = damage;
+        pendingEnemyPoisonTurns  = turns;
+    }
+
+    /** Called by CombatPotion(DEBUFF_BLIND). missBonus is a percentage (e.g. 30 = 30%). */
+    public void setPendingEnemyBlind(int missBonus, int turns) {
+        pendingEnemyBlindMissBonus = missBonus;
+        pendingEnemyBlindTurns     = turns;
+    }
+
+    /** Called by CombatPotion(DEBUFF_STUN). Enemy skips their next attack. */
+    public void setPendingEnemyStun() { pendingEnemyStun = true; }
+
+    /** Returns active attack bonus, 0 if no turns remain. */
+    public int getCombatAttackBonus()  { return combatAttackBonusTurns  > 0 ? combatAttackBonus  : 0; }
+
+    /** Returns active defense bonus, 0 if no turns remain. */
+    public int getCombatDefenseBonus() { return combatDefenseBonusTurns > 0 ? combatDefenseBonus : 0; }
+
+    /** Reads and clears pending poison (so it's applied once by CombatSystem). */
+    public int drainPendingPoisonDamage() { int v = pendingEnemyPoisonDamage; pendingEnemyPoisonDamage = 0; return v; }
+    public int drainPendingPoisonTurns()  { int v = pendingEnemyPoisonTurns;  pendingEnemyPoisonTurns  = 0; return v; }
+
+    /** Returns remaining blind turns (so CombatSystem can add miss bonus each turn). */
+    public int getPendingEnemyBlindMissBonus() { return pendingEnemyBlindTurns > 0 ? pendingEnemyBlindMissBonus : 0; }
+    public int getPendingEnemyBlindTurns()     { return pendingEnemyBlindTurns; }
+
+    /** Reads and clears stun flag. */
+    public boolean drainPendingEnemyStun() { boolean v = pendingEnemyStun; pendingEnemyStun = false; return v; }
+
+    /**
+     * Called by CombatSystem at the end of each full turn to count down buff/debuff durations.
+     * Prints expiry messages so the player knows when effects run out.
+     */
+    public void decrementCombatBuffs() {
+        if (combatAttackBonusTurns > 0) {
+            combatAttackBonusTurns--;
+            if (combatAttackBonusTurns == 0)
+                System.out.println("  The attack boost from your Battle Tonic has faded.");
+        }
+        if (combatDefenseBonusTurns > 0) {
+            combatDefenseBonusTurns--;
+            if (combatDefenseBonusTurns == 0)
+                System.out.println("  The stone-skin effect has worn off.");
+        }
+        if (pendingEnemyBlindTurns > 0) {
+            pendingEnemyBlindTurns--;
+        }
     }
 
     // -------------------------------------------------------------------------
