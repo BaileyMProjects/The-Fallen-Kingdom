@@ -107,6 +107,12 @@ public class CommandParser {
             case "sell": case "trade":
                 return new Command(CommandType.SELL, args);
 
+            case "enchant": case "ench":
+                return new Command(CommandType.ENCHANT, args);
+
+            case "respawn": case "summon": case "reset":
+                return new Command(CommandType.RESPAWN, new String[0]);
+
             case "befriend": case "friend": case "ally":
                 return new Command(CommandType.BEFRIEND, args);
 

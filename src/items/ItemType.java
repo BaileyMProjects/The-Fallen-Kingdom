@@ -10,17 +10,26 @@ package items;
 public enum ItemType {
     // Weapons
     IRON_SWORD,
+    STEEL_SWORD,
     SHADOW_BLADE,
     BATTLE_AXE,
 
-    // Armour
+    // Armour — head
+    IRON_HELMET,
+
+    // Armour — torso
     LEATHER_CHESTPLATE,
+    CHAINMAIL_VEST,
     SHADOW_ROBE,
+
+    // Armour — legs
+    LEATHER_GREAVES,
     EVASIVE_BOOTS,
 
     // Consumables
     HEALTH_POTION,
     ELIXIR,
+    GREATER_ELIXIR,
 
     // Keys
     ANCIENT_KEY,

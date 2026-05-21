@@ -2,6 +2,7 @@ package enchantments;
 
 import core.Difficulty;
 import items.Armour;
+import items.Item;
 import items.Weapon;
 
 import java.util.Random;
@@ -34,7 +35,7 @@ public class EnchantmentFactory {
      * @return the enchanted item (WeaponEnchantment or ArmourEnchantment)
      * @throws IllegalArgumentException if item is neither a Weapon nor an Armour
      */
-    public static Object roll(Object item, Difficulty difficulty) {
+    public static Item roll(Item item, Difficulty difficulty) {
         EnchantmentTier tier = rollTier();
 
         if (item instanceof WeaponEnchantment) {

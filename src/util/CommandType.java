@@ -28,7 +28,9 @@ public enum CommandType {
     TALK,
     BUY,
     SELL,
+    ENCHANT,    // enchant a weapon or armour at an Enchanter NPC
     BEFRIEND,   // choose friendship over combat (Tree Protector)
+    RESPAWN,    // pay to respawn arena enemies in the Proving Grounds
 
     // Combat
     ATTACK,

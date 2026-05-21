@@ -11,6 +11,7 @@ import events.PlayerObserver;
 import events.QuestObserver;
 import events.GameEvent;
 import events.GameEventType;
+import characters.Enchanter;
 import enchantments.WeaponEnchantment;
 import items.Item;
 import items.ItemFactory;
@@ -161,6 +162,7 @@ public class Game {
             case SOLVE:      handleSolve();          break;
             case BUY:        handleBuy(command);     break;
             case SELL:       handleSell(command);    break;
+            case ENCHANT:    handleEnchant(command); break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -440,6 +442,24 @@ public class Game {
         ((Merchant) npc).buyItem(command.getArgString(), player);
     }
 
+    private void handleEnchant(Command command) {
+        if (!command.hasArgs()) {
+            System.out.println("Enchant what? (e.g. 'enchant iron sword')");
+            return;
+        }
+        Enchanter enchanter = world.getCurrentLocation().findNPCOfType(Enchanter.class);
+        if (enchanter == null) {
+            System.out.println("There is no enchanter here.");
+            return;
+        }
+        Item item = player.getInventory().findItem(command.getArgString());
+        if (item == null) {
+            System.out.println("You don't have a '" + command.getArgString() + "'.");
+            return;
+        }
+        enchanter.enchant(player, item, difficulty);
+    }
+
     private void handleSell(Command command) {
         if (!command.hasArgs()) {
             System.out.println("Sell what?");
@@ -482,6 +502,7 @@ public class Game {
         System.out.println("  solve                Attempt to solve a puzzle");
         System.out.println("  buy <item>           Buy from a merchant");
         System.out.println("  sell <item>          Sell to a merchant");
+        System.out.println("  enchant <item>       Enchant gear at an enchanter (30g + Shadow Crystal)");
         System.out.println("  stats                View your character statistics");
         System.out.println("  quests               View your quest log");
         System.out.println("  help                 Show this list");
@@ -566,7 +587,7 @@ public class Game {
                 for (Item i : loc.getItems())
                     if (i.getName().toLowerCase().startsWith(lp)) results.add(i.getName());
                 break;
-            case "drop": case "use": case "equip": case "sell":
+            case "drop": case "use": case "equip": case "sell": case "enchant":
                 for (Item i : player.getInventory().getItems())
                     if (i.getName().toLowerCase().startsWith(lp)) results.add(i.getName());
                 break;

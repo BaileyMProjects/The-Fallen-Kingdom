@@ -74,6 +74,7 @@ public class EnemyFactory {
         );
         knight.setAttackStrategy(new DefensiveStrategy());
         knight.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
+        knight.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.12);
         return knight;
     }
 
@@ -123,6 +124,7 @@ public class EnemyFactory {
             "  since faded. Its fists crack the earth with every step."
         );
         sentinel.setAttackStrategy(new DefensiveStrategy());
+        sentinel.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.13);
         return sentinel;
     }
 
@@ -141,6 +143,7 @@ public class EnemyFactory {
         );
         wraith.setAttackStrategy(new AggressiveStrategy());
         wraith.addLootItem(ItemFactory.create(ItemType.ELIXIR));
+        wraith.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.15);
         return wraith;
     }
 

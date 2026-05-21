@@ -40,17 +40,26 @@ public class ItemFactory {
         switch (type) {
             // Weapons
             case IRON_SWORD:     return createIronSword();
+            case STEEL_SWORD:    return createSteelSword();
             case SHADOW_BLADE:   return createShadowBlade();
             case BATTLE_AXE:     return createBattleAxe();
 
-            // Armour
+            // Armour — head
+            case IRON_HELMET:        return createIronHelmet();
+
+            // Armour — torso
             case LEATHER_CHESTPLATE: return createLeatherChestplate();
-            case SHADOW_ROBE:    return createShadowRobe();
-            case EVASIVE_BOOTS:  return createEvasiveBoots();
+            case CHAINMAIL_VEST:     return createChainmailVest();
+            case SHADOW_ROBE:        return createShadowRobe();
+
+            // Armour — legs
+            case LEATHER_GREAVES:    return createLeatherGreaves();
+            case EVASIVE_BOOTS:      return createEvasiveBoots();
 
             // Consumables
             case HEALTH_POTION:  return createHealthPotion();
             case ELIXIR:         return createElixir();
+            case GREATER_ELIXIR: return createGreaterElixir();
 
             // Keys
             case ANCIENT_KEY:    return createAncientKey();
@@ -77,6 +86,15 @@ public class ItemFactory {
             "A well-balanced iron sword with a keen edge. Reliable, if unremarkable.",
             15,   // gold value (buy price)
             8     // attack bonus
+        );
+    }
+
+    private static Weapon createSteelSword() {
+        return new Weapon(
+            "Steel Sword",
+            "A finely forged steel blade — heavier than iron, but the balance is superb.",
+            30,   // gold value
+            12    // attack bonus
         );
     }
 
@@ -108,12 +126,33 @@ public class ItemFactory {
     // Armour
     // -------------------------------------------------------------------------
 
+    private static Armour createIronHelmet() {
+        return new Armour(
+            "Iron Helmet",
+            "A solid iron helm that covers the skull and cheeks. Dented but dependable.",
+            25,              // gold value
+            3,               // defense bonus
+            ArmourSlot.HEAD
+        );
+    }
+
     private static Armour createLeatherChestplate() {
         return new Armour(
             "Leather Chestplate",
             "A sturdy tanned leather chestplate — not glamorous, but it keeps you alive.",
             20,             // gold value
             3,              // defense bonus
+            ArmourSlot.TORSO
+        );
+    }
+
+    private static Armour createChainmailVest() {
+        return new Armour(
+            "Chainmail Vest",
+            "Interlocking iron rings form a flexible but tough vest. Heavier than leather\n" +
+            "  but far more resistant to blades and claws.",
+            35,               // gold value
+            5,                // defense bonus
             ArmourSlot.TORSO
         );
     }
@@ -127,6 +166,16 @@ public class ItemFactory {
             0,              // treasure, not for sale
             6,              // defense bonus
             ArmourSlot.TORSO
+        );
+    }
+
+    private static Armour createLeatherGreaves() {
+        return new Armour(
+            "Leather Greaves",
+            "Thick leather leg guards stitched with reinforced panels. Simple but effective.",
+            20,              // gold value
+            2,               // defense bonus
+            ArmourSlot.LEGS
         );
     }
 
@@ -160,6 +209,15 @@ public class ItemFactory {
      * Elixir — a stronger restorative found deep in the shadow domain.
      * Sold by Griswold and rewarded by the Cursed Archives puzzle.
      */
+    private static Potion createGreaterElixir() {
+        return new Potion(
+            "Greater Elixir",
+            "A deep crimson vial that radiates intense warmth. Restores 100 HP when consumed.",
+            35,   // gold value
+            100   // heal amount
+        );
+    }
+
     private static Potion createElixir() {
         return new Potion(
             "Elixir",
@@ -200,13 +258,14 @@ public class ItemFactory {
      * Has no buy price (unobtainable from shops) but triggers special merchant
      * dialogue and a gold reward of 50–100 when sold to Griswold.
      */
-    private static QuestItem createShadowCrystal() {
-        return new QuestItem(
+    private static MaterialItem createShadowCrystal() {
+        return new MaterialItem(
             "Shadow Crystal",
             "A shard of crystallised shadow energy, still pulsing faintly with dark magic.\n" +
             "  An enchanter could use this to bind power to your equipment.",
             "A Shadow Crystal — raw, concentrated shadow energy given physical form.\n" +
-            "  The enchanter in the merchant's village can use this to enchant your gear."
+            "  Seraphina the Enchantress can use this to enchant your gear for 30 gold.",
+            60    // gold value — sold by second merchant, sell-back at 30g
         );
     }
 

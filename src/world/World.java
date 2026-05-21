@@ -1,5 +1,7 @@
 package world;
 
+import characters.ArenaMaster;
+import characters.Enchanter;
 import characters.EnemyFactory;
 import characters.EnemyType;
 import characters.Merchant;
@@ -123,11 +125,25 @@ public class World {
             "of soldiers long since consumed by darkness. A tattered shadow robe\n" +
             "hangs on the far wall.");
 
+        Location merchantVillage = new Location(LocationId.MERCHANT_VILLAGE, "Merchant's Village",
+            "A prosperous settlement built along a well-worn trade road. Unlike the\n" +
+            "half-abandoned village to the north, this place hums with activity.\n" +
+            "A blacksmith's forge glows orange in one corner; across the square, an\n" +
+            "enchantress's tent shimmers with faint arcane light. The air smells of\n" +
+            "hot iron and something older — magic.");
+
         Location cursedArchives = new Location(LocationId.CURSED_ARCHIVES, "Cursed Archives",
             "Row upon row of ancient bookshelves stretch into the darkness, their\n" +
             "tomes crackling with corrupted shadow energy. At the room's heart\n" +
             "stands a stone altar bearing four symbol-etched levers. Carved above\n" +
             "them in shadow-script: 'Knowledge yields to those who seek in order.'");
+
+        Location provingGrounds = new Location(LocationId.PROVING_GROUNDS, "Proving Grounds",
+            "A wide stone arena enclosed by iron fencing. Scorch marks and old\n" +
+            "bloodstains cover the floor — countless battles have been fought here.\n" +
+            "A weathered arena master stands at the gate controls, arms crossed.\n" +
+            "Shadow creatures lurk in caged pens along the far wall, waiting to\n" +
+            "be released. The air tastes of iron and something darker.");
 
         // ================================================================
         // CONNECT LOCATIONS
@@ -144,6 +160,14 @@ public class World {
         // Dark Forest ↔ Underground Dungeon
         darkForest.setExit(Direction.EAST,  dungeon);
         dungeon.setExit(Direction.WEST,  darkForest);
+
+        // Village ↔ Merchant Village
+        village.setExit(Direction.SOUTH, merchantVillage);
+        merchantVillage.setExit(Direction.NORTH, village);
+
+        // Merchant Village ↔ Proving Grounds
+        merchantVillage.setExit(Direction.SOUTH, provingGrounds);
+        provingGrounds.setExit(Direction.NORTH, merchantVillage);
 
         // Dark Forest ↔ Mystic Glade (new)
         darkForest.setExit(Direction.SOUTH, mysticGlade);
@@ -197,6 +221,51 @@ public class World {
         merchant.addShopItem(ItemFactory.create(ItemType.HEALTH_POTION));
         merchant.addShopItem(ItemFactory.create(ItemType.ELIXIR));
         village.addNPC(merchant);
+
+        // Merchant Village — Seraphina the Enchantress
+        merchantVillage.addNPC(new Enchanter(
+            "Seraphina the Enchantress",
+            "A tall woman in robes that seem to shift colour in the light. Her eyes\n" +
+            "  glow faintly violet — a side-effect, she says, of years working with\n" +
+            "  shadow energy. She regards you with calm, professional curiosity."
+        ));
+
+        // Merchant Village — Aldric the Smith (second merchant, better stock)
+        Merchant aldric = new Merchant(
+            "Aldric the Smith",
+            "A broad-shouldered man with forearms scarred by decades at the forge.\n" +
+            "  His wares are expensive but noticeably well-made."
+        );
+        aldric.addShopItem(ItemFactory.create(ItemType.STEEL_SWORD));
+        aldric.addShopItem(ItemFactory.create(ItemType.CHAINMAIL_VEST));
+        aldric.addShopItem(ItemFactory.create(ItemType.IRON_HELMET));
+        aldric.addShopItem(ItemFactory.create(ItemType.LEATHER_GREAVES));
+        aldric.addShopItem(ItemFactory.create(ItemType.GREATER_ELIXIR));
+        aldric.addShopItem(ItemFactory.create(ItemType.SHADOW_CRYSTAL));
+        merchantVillage.addNPC(aldric);
+
+        // Proving Grounds — ArenaMaster NPC
+        provingGrounds.addNPC(new ArenaMaster(
+            "Goran the Arena Master",
+            "A barrel-chested man with a shaved head and hands like shovels. Old\n" +
+            "  scars map every fight he's overseen. He watches you with calculating eyes."
+        ));
+
+        // Merchant Village — quest giver NPC
+        merchantVillage.addNPC(new NPC(
+            "Wandering Scholar",
+            "A thin man surrounded by scrolls, scribbling notes with ink-stained fingers.",
+            new String[]{
+                "Extraordinary! You've ventured from the north — through the shadow corruption? " +
+                "I've been studying these creatures for years. The Void Wraiths in the castle " +
+                "carry crystallised shadow energy in their bodies. If you recover some, " +
+                "Seraphina can put it to remarkable use.",
+                "I hear the Shadow Lord himself has fallen recently. Remarkable. And yet " +
+                "something darker stirs beyond the throne... the corruption runs deeper " +
+                "than anyone realised. Tread carefully if you press on.",
+                "My notes are nearly complete. Fascinating times, truly fascinating."
+            }
+        ));
 
         castle.addNPC(new NPC(
             "Imprisoned Knight",
@@ -318,6 +387,8 @@ public class World {
         locations.put(LocationId.FORGOTTEN_BATTLEFIELD,forgottenBattlefield);
         locations.put(LocationId.SHADOW_BARRACKS,      shadowBarracks);
         locations.put(LocationId.CURSED_ARCHIVES,      cursedArchives);
+        locations.put(LocationId.MERCHANT_VILLAGE,     merchantVillage);
+        locations.put(LocationId.PROVING_GROUNDS,      provingGrounds);
 
         currentLocation = village;
     }

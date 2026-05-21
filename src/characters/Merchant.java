@@ -39,6 +39,15 @@ public class Merchant extends NPC {
         this.shopItems = new ArrayList<>();
     }
 
+    /** Constructor for named merchants (e.g. the second village smith). */
+    public Merchant(String name, String description) {
+        super(name, description, new String[]{
+            "Welcome! Finest wares in the region. Use 'buy <item>' to purchase.",
+            "I deal in quality gear — none of that flimsy village stuff. Browse freely."
+        });
+        this.shopItems = new ArrayList<>();
+    }
+
     // -------------------------------------------------------------------------
     // Shop stock management
     // -------------------------------------------------------------------------

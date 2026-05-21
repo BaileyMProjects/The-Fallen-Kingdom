@@ -21,5 +21,11 @@ public enum LocationId {
 
     // Expanded world — shadow domain
     SHADOW_BARRACKS,
-    CURSED_ARCHIVES
+    CURSED_ARCHIVES,
+
+    // Merchant's Village — second settlement with enchanter and smith
+    MERCHANT_VILLAGE,
+
+    // Proving Grounds — arena south of Merchant's Village, mob-respawn farming area
+    PROVING_GROUNDS
 }
