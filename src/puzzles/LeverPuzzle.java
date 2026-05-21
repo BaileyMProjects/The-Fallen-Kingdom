@@ -9,45 +9,57 @@ import world.Location;
 /**
  * LeverPuzzle — a mechanical sequence puzzle with numbered levers.
  *
- * Used in the Underground Dungeon.  Three levers must be pulled in the
- * correct order (1 → 3 → 2).  The cryptic clue references moon phases:
- *   "Waxing" (growing, first) = 1
- *   "Waning" (shrinking, last) = 3
- *   "Half"   (middle)          = 2
+ * The number of levers and correct sequence are fully configurable so the
+ * same class can drive both the 3-lever dungeon puzzle and the 4-lever
+ * Cursed Archives puzzle.
  *
  * Behaviour:
  *   - The player enters lever numbers one at a time.
- *   - Progress is shown after each pull ("Lever 1 pulled. Next: ?/?").
+ *   - Progress is shown after each pull.
  *   - A wrong lever at any point resets the sequence with feedback.
  *   - The player can type 'quit' to stop attempting.
- *   - On success, any configured reward item is added to the location.
- *
- * Validates all input: non-numeric entries and out-of-range numbers are
- * handled gracefully with an error message rather than a crash.
+ *   - On success, any configured reward item is added to the location and any
+ *     configured exit direction is unlocked.
  */
 public class LeverPuzzle extends Puzzle {
 
-    private static final int LEVER_COUNT = 3;
-
     private final int[]     correctSequence;
+    private final int       leverCount;   // total levers in this puzzle (derived from max value)
+    private final String    clue;
     private final Item      rewardItem;
     private final Direction unlockDirection;
 
     // -------------------------------------------------------------------------
-    // Constructor
+    // Constructors
     // -------------------------------------------------------------------------
 
     /**
-     * @param correctSequence the order in which levers must be pulled
-     * @param rewardItem      item added to the location on success, or null
-     * @param unlockDirection exit unlocked on success, or null
+     * Fully-configurable constructor — name, description, clue, and lever count
+     * are all supplied by the caller.  Used for the Cursed Archives puzzle.
+     */
+    public LeverPuzzle(String name, String description, String clue,
+                       int[] correctSequence, Item rewardItem, Direction unlockDirection) {
+        super(name, description);
+        this.correctSequence  = correctSequence;
+        this.clue             = clue;
+        this.rewardItem       = rewardItem;
+        this.unlockDirection  = unlockDirection;
+        int max = 0;
+        for (int v : correctSequence) if (v > max) max = v;
+        this.leverCount = max;
+    }
+
+    /**
+     * Convenience constructor matching the original 3-argument signature used
+     * by the Underground Dungeon puzzle — no name/description/clue needed.
      */
     public LeverPuzzle(int[] correctSequence, Item rewardItem, Direction unlockDirection) {
-        super("Lever Puzzle",
-              "Three heavy iron levers protrude from the wall, each engraved with a number.");
-        this.correctSequence = correctSequence;
-        this.rewardItem      = rewardItem;
-        this.unlockDirection = unlockDirection;
+        this(
+            "Lever Puzzle",
+            "Three heavy iron levers protrude from the wall, each engraved with a number.",
+            "Follow the moonlight: waxing, waning, half.",
+            correctSequence, rewardItem, unlockDirection
+        );
     }
 
     // -------------------------------------------------------------------------
@@ -56,11 +68,11 @@ public class LeverPuzzle extends Puzzle {
 
     @Override
     public void attempt(Player player, InputHandler inputHandler, Location location) {
-        System.out.println("\n=== Lever Mechanism ===");
+        System.out.println("\n=== " + getName() + " ===");
         System.out.println(description);
         System.out.println("\nAn inscription carved beneath them reads:");
-        System.out.println("  \"Follow the moonlight: waxing, waning, half.\"\n");
-        System.out.println("Pull the levers 1-" + LEVER_COUNT + " in the correct order.");
+        System.out.println("  \"" + clue + "\"\n");
+        System.out.println("Pull the levers 1-" + leverCount + " in the correct order.");
         System.out.println("(Type the lever number, or 'quit' to stop)\n");
 
         int step = 0;
@@ -76,23 +88,21 @@ public class LeverPuzzle extends Puzzle {
                 return;
             }
 
-            // Validate: must be a number in range
             int leverNumber;
             try {
                 leverNumber = Integer.parseInt(input);
             } catch (NumberFormatException e) {
-                System.out.println("Enter a number between 1 and " + LEVER_COUNT
+                System.out.println("Enter a number between 1 and " + leverCount
                         + ", or 'quit' to stop.");
                 continue;
             }
 
-            if (leverNumber < 1 || leverNumber > LEVER_COUNT) {
+            if (leverNumber < 1 || leverNumber > leverCount) {
                 System.out.println("There is no lever " + leverNumber
-                        + ". Choose between 1 and " + LEVER_COUNT + ".");
+                        + ". Choose between 1 and " + leverCount + ".");
                 continue;
             }
 
-            // Check if this is the correct lever for this step
             if (leverNumber == correctSequence[step]) {
                 step++;
                 printPullFeedback(leverNumber, step);
@@ -112,15 +122,15 @@ public class LeverPuzzle extends Puzzle {
     // -------------------------------------------------------------------------
 
     private void printPullFeedback(int lever, int stepsDone) {
-        String[] sounds = {"Click.", "Clunk.", "The wall shudders..."};
-        int soundIndex  = Math.min(stepsDone - 1, sounds.length - 1);
-        System.out.println("You pull Lever " + lever + ". " + sounds[soundIndex]);
+        String[] sounds = {"Click.", "Clunk.", "The wall shudders...", "A deep boom resonates."};
+        int idx = Math.min(stepsDone - 1, sounds.length - 1);
+        System.out.println("You pull Lever " + lever + ". " + sounds[idx]);
     }
 
     private void onSuccess(Location location) {
         solved = true;
         System.out.println("\nDeep within the wall, ancient gears turn.");
-        System.out.println("*** Lever Puzzle Solved! ***\n");
+        System.out.println("*** " + getName() + " Solved! ***\n");
 
         if (rewardItem != null) {
             location.addItem(rewardItem);
@@ -134,4 +144,5 @@ public class LeverPuzzle extends Puzzle {
                     + unlockDirection.name().toLowerCase() + " is now open.");
         }
     }
+
 }

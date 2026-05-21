@@ -19,11 +19,6 @@ package items;
  *   2. Add a private create method here.
  *   3. Add a case to the switch.
  *   No caller changes required.
- *
- * AI NOTE:
- *   The structure of this factory was generated with the assistance of
- *   Claude Code (Anthropic) and then reviewed and adapted for this project.
- *   See REPORT.md — Section 2 for full details.
  */
 public class ItemFactory {
 
@@ -43,25 +38,36 @@ public class ItemFactory {
      */
     public static Item create(ItemType type) {
         switch (type) {
+            // Weapons
             case IRON_SWORD:     return createIronSword();
             case SHADOW_BLADE:   return createShadowBlade();
+            case BATTLE_AXE:     return createBattleAxe();
+
+            // Armour
             case LEATHER_ARMOUR: return createLeatherArmour();
+            case SHADOW_ROBE:    return createShadowRobe();
+            case EVASIVE_BOOTS:  return createEvasiveBoots();
+
+            // Consumables
             case HEALTH_POTION:  return createHealthPotion();
+            case ELIXIR:         return createElixir();
+
+            // Keys
             case ANCIENT_KEY:    return createAncientKey();
+
+            // Quest / special items
             case ANCIENT_RELIC:  return createAncientRelic();
+            case FOREST_GEM:     return createForestGem();
+
             default:
                 throw new IllegalArgumentException("Unknown item type: " + type);
         }
     }
 
     // -------------------------------------------------------------------------
-    // Private creation methods — one per item type
+    // Weapons
     // -------------------------------------------------------------------------
 
-    /**
-     * Iron Sword — the standard weapon, sold by the Merchant.
-     * A solid early upgrade that makes a meaningful difference against goblins.
-     */
     private static Weapon createIronSword() {
         return new Weapon(
             "Iron Sword",
@@ -71,10 +77,6 @@ public class ItemFactory {
         );
     }
 
-    /**
-     * Shadow Blade — the advanced weapon, rewarded by the dungeon puzzle.
-     * Cannot be sold (value 0) — it is a dungeon treasure, not a trade good.
-     */
     private static Weapon createShadowBlade() {
         return new Weapon(
             "Shadow Blade",
@@ -86,8 +88,23 @@ public class ItemFactory {
     }
 
     /**
-     * Leather Armour — the standard armour, sold by the Merchant.
+     * Battle Axe — a heavy two-handed weapon found on the Forgotten Battlefield.
+     * Higher attack than the Iron Sword but slower feel (lore-only difference).
      */
+    private static Weapon createBattleAxe() {
+        return new Weapon(
+            "Battle Axe",
+            "A weathered battle axe salvaged from the ruined battlefield. Heavy and\n" +
+            "  brutal — each swing carries the weight of a forgotten war.",
+            18,   // sell value
+            12    // attack bonus
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Armour
+    // -------------------------------------------------------------------------
+
     private static Armour createLeatherArmour() {
         return new Armour(
             "Leather Armour",
@@ -98,9 +115,38 @@ public class ItemFactory {
     }
 
     /**
-     * Health Potion — the only consumable in the game.
-     * Available from the Merchant and dropped by the Dark Knight.
+     * Shadow Robe — found in the Shadow Barracks.
+     * Superior defense compared to Leather Armour; imbued with faint shadow energy.
      */
+    private static Armour createShadowRobe() {
+        return new Armour(
+            "Shadow Robe",
+            "A robe woven from compressed shadow energy. Cold to the touch but\n" +
+            "  surprisingly resilient — the darkness itself deflects blows.",
+            0,    // treasure, not for sale
+            6     // defense bonus
+        );
+    }
+
+    /**
+     * Evasive Boots — gifted by the Tree Protector on befriending.
+     * Grants +1 defense and adds 20% to the enemy miss-chance when worn.
+     */
+    private static Armour createEvasiveBoots() {
+        return new Armour(
+            "Evasive Boots",
+            "Boots woven from ancient root-fibre and living wind. Light as a leaf,\n" +
+            "  they shift your weight just enough to make enemies swing wide.",
+            0,    // gift, not for sale
+            1,    // defense bonus
+            0.20  // +20% enemy miss chance
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Consumables
+    // -------------------------------------------------------------------------
+
     private static Potion createHealthPotion() {
         return new Potion(
             "Health Potion",
@@ -111,10 +157,22 @@ public class ItemFactory {
     }
 
     /**
-     * Ancient Key — unlocks the iron door between the Underground Dungeon and
-     * the Corrupted Castle.  Awarded on solving the Ancient Ruins riddle.
-     * No sell value — it serves a single plot-critical purpose.
+     * Elixir — a stronger restorative found deep in the shadow domain.
+     * Sold by Griswold and rewarded by the Cursed Archives puzzle.
      */
+    private static Potion createElixir() {
+        return new Potion(
+            "Elixir",
+            "A luminous silver vial that radiates warmth. Restores 70 HP when consumed.",
+            20,   // gold value
+            70    // heal amount
+        );
+    }
+
+    // -------------------------------------------------------------------------
+    // Keys
+    // -------------------------------------------------------------------------
+
     private static Key createAncientKey() {
         return new Key(
             "Ancient Key",
@@ -123,10 +181,10 @@ public class ItemFactory {
         );
     }
 
-    /**
-     * Ancient Relic — the win-condition item, dropped by the Shadow Lord.
-     * A QuestItem: no sell value, use() displays the victory lore text.
-     */
+    // -------------------------------------------------------------------------
+    // Quest / special items
+    // -------------------------------------------------------------------------
+
     private static QuestItem createAncientRelic() {
         return new QuestItem(
             "Ancient Relic",
@@ -134,6 +192,21 @@ public class ItemFactory {
             "The Ancient Relic — a crystalline orb of boundless power. The Shadow Lord " +
             "shattered it to plunge the kingdom into darkness. Holding it now, you feel " +
             "its light pushing back the shadows. The kingdom can be saved."
+        );
+    }
+
+    /**
+     * Forest Gem — a rare gem nestled inside the Tree Protector's sacred oak.
+     * Has no buy price (unobtainable from shops) but triggers special merchant
+     * dialogue and a gold reward of 50–100 when sold to Griswold.
+     */
+    private static QuestItem createForestGem() {
+        return new QuestItem(
+            "Forest Gem",
+            "A flawless gem that pulses with soft emerald light. It is warm to the\n" +
+            "  touch, as though the ancient grove still lives within it.",
+            "A Forest Gem — extraordinarily rare, born from centuries of grove magic.\n" +
+            "  Merchants would pay handsomely for something like this."
         );
     }
 }

@@ -82,9 +82,24 @@ public class Merchant extends NPC {
 
     /**
      * Player sells an item from their inventory.
-     * Awards SELL_PERCENT of the item's buy value (minimum 1 gold).
+     * The Forest Gem triggers a unique merchant reaction and a randomised
+     * gold reward (50–100 gold) reflecting its rarity.
+     * All other items sell for SELL_PERCENT of their buy value (min 1 gold).
      */
     public void sellItem(Item item, Player player) {
+        if (item.getName().equalsIgnoreCase("Forest Gem")) {
+            int gemGold = 50 + (int)(Math.random() * 51); // 50–100
+            player.getInventory().removeItem(item);
+            player.addGold(gemGold);
+            System.out.println("\nGriswold's eyes go wide as saucers.");
+            System.out.println("\"By the old gods... a Forest Gem! I haven't laid eyes on");
+            System.out.println("  one of these in thirty years! They're born from centuries");
+            System.out.println("  of pure grove magic — utterly irreplaceable!\"");
+            System.out.println("\"I'll give you " + gemGold + " gold. That's a generous sum");
+            System.out.println("  and you know it. Deal?\"");
+            System.out.println("\nSold: Forest Gem for " + gemGold + " gold.\n");
+            return;
+        }
         int sellPrice = Math.max(1, item.getValue() * SELL_PERCENT / 100);
         player.getInventory().removeItem(item);
         player.addGold(sellPrice);

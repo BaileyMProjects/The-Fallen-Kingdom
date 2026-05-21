@@ -32,6 +32,8 @@ import util.InputHandler;
  */
 public class CombatSystem {
 
+    private static final double BASE_MISS_CHANCE = 0.10;
+
     private final EventManager eventManager;
     private double             enemyDamageMultiplier = 1.0;
 
@@ -135,6 +137,10 @@ public class CombatSystem {
     // -------------------------------------------------------------------------
 
     private void playerAttack(Player player, Enemy enemy) {
+        if (Math.random() < BASE_MISS_CHANCE) {
+            System.out.println("\n  You swing at " + enemy.getName() + "... and miss!");
+            return;
+        }
         int damage = Math.max(1, player.getAttackPower() - enemy.getDefense());
         System.out.println("\n  You strike " + enemy.getName() + "...");
         pause(750);
@@ -149,6 +155,12 @@ public class CombatSystem {
     }
 
     private void enemyAttack(Enemy enemy, Player player) {
+        // Base 10% miss + any bonus from the player's equipped armour (e.g. Evasive Boots)
+        double totalMiss = BASE_MISS_CHANCE + player.getEvasionBonus();
+        if (Math.random() < totalMiss) {
+            System.out.println("\n  " + enemy.getName() + " attacks — but misses you!");
+            return;
+        }
         // STRATEGY PATTERN applied here; difficulty multiplier then scales the result
         int raw    = enemy.getAttackStrategy().calculateDamage(enemy, player);
         int damage = (int) Math.max(1, Math.round(raw * enemyDamageMultiplier));

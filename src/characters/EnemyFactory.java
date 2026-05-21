@@ -36,39 +36,28 @@ public class EnemyFactory {
     // Factory method
     // -------------------------------------------------------------------------
 
-    /**
-     * Creates and fully configures an enemy of the given type.
-     *
-     * @param type the kind of enemy to create
-     * @return a new, ready-to-use Enemy instance
-     * @throws IllegalArgumentException if the type is unrecognised
-     */
     public static Enemy create(EnemyType type) {
         switch (type) {
-            case SHADOW_GOBLIN: return createShadowGoblin();
-            case DARK_KNIGHT:   return createDarkKnight();
-            case SHADOW_LORD:   return createShadowLord();
+            case SHADOW_GOBLIN:       return createShadowGoblin();
+            case DARK_KNIGHT:         return createDarkKnight();
+            case SHADOW_LORD:         return createShadowLord();
+            case PLAGUE_RAT:          return createPlagueRat();
+            case STONE_SENTINEL:      return createStoneSentinel();
+            case VOID_WRAITH:         return createVoidWraith();
+            case TREE_PROTECTOR_ENEMY: return createTreeProtectorEnemy();
             default:
                 throw new IllegalArgumentException("Unknown enemy type: " + type);
         }
     }
 
     // -------------------------------------------------------------------------
-    // Private creation methods — one per enemy type
+    // Original enemies
     // -------------------------------------------------------------------------
 
-    /**
-     * Shadow Goblin — a weak early-game enemy.
-     * Uses RandomStrategy: its attacks vary between weak, normal, and heavy
-     * hits, making it unpredictable despite low base stats.
-     */
     private static Enemy createShadowGoblin() {
         Enemy goblin = new Enemy(
             "Shadow Goblin",
-            30,   // HP
-            8,    // attack
-            2,    // defense
-            10,   // gold drop
+            30, 8, 2, 10,
             "A hunched creature wreathed in shadow with glowing red eyes.\n" +
             "  Its movements are twitchy and unpredictable."
         );
@@ -76,19 +65,10 @@ public class EnemyFactory {
         return goblin;
     }
 
-    /**
-     * Dark Knight — a mid-game armoured enemy.
-     * Uses DefensiveStrategy: lower base damage but a 30% chance of a
-     * Shield Bash that deals bonus damage — makes him feel disciplined but
-     * dangerous.  Drops a Health Potion on defeat.
-     */
     private static Enemy createDarkKnight() {
         Enemy knight = new Enemy(
             "Dark Knight",
-            70,   // HP
-            15,   // attack
-            8,    // defense
-            25,   // gold drop
+            70, 15, 8, 25,
             "A towering knight clad in black armour that seems to drink the light.\n" +
             "  He moves with slow, measured precision — every step deliberate."
         );
@@ -97,25 +77,88 @@ public class EnemyFactory {
         return knight;
     }
 
-    /**
-     * Shadow Lord — the final boss.
-     * Created as a Boss (isBoss() == true) so Game triggers the victory
-     * screen on defeat.  Uses AggressiveStrategy: 1.5× multiplier before
-     * applying player defence, making him consistently lethal.
-     * Drops the Ancient Relic — the win condition item.
-     */
     private static Enemy createShadowLord() {
         Boss shadowLord = new Boss(
             "Shadow Lord",
-            120,  // HP
-            20,   // attack
-            10,   // defense
-            0,    // gold drop (irrelevant — winning is the reward)
+            120, 20, 10, 0,
             "A being of pure darkness standing twice the height of a man.\n" +
             "  His eyes burn with ancient malice. The air grows cold around him."
         );
         shadowLord.setAttackStrategy(new AggressiveStrategy());
         shadowLord.addLootItem(ItemFactory.create(ItemType.ANCIENT_RELIC));
         return shadowLord;
+    }
+
+    // -------------------------------------------------------------------------
+    // New enemies
+    // -------------------------------------------------------------------------
+
+    /**
+     * Plague Rat — a sickly swarm enemy found in the Dark Forest and Battlefield.
+     * Weak individually but their numbers make them unpredictable.
+     * Uses RandomStrategy to represent erratic swarming behaviour.
+     */
+    private static Enemy createPlagueRat() {
+        Enemy rat = new Enemy(
+            "Plague Rat Swarm",
+            25, 6, 1, 5,
+            "A seething mass of diseased rats that move as one writhing body.\n" +
+            "  Their bites are weak but their sheer number is unsettling."
+        );
+        rat.setAttackStrategy(new RandomStrategy());
+        rat.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
+        return rat;
+    }
+
+    /**
+     * Stone Sentinel — a heavy golem-like guardian on the Forgotten Battlefield.
+     * High defense makes it durable; DefensiveStrategy means it occasionally
+     * lands a powerful Shield Bash despite its slow nature.
+     */
+    private static Enemy createStoneSentinel() {
+        Enemy sentinel = new Enemy(
+            "Stone Sentinel",
+            55, 14, 10, 15,
+            "A massive construct of ancient stone, animated by war-magic long\n" +
+            "  since faded. Its fists crack the earth with every step."
+        );
+        sentinel.setAttackStrategy(new DefensiveStrategy());
+        return sentinel;
+    }
+
+    /**
+     * Void Wraith — an aggressive shadow-energy creature haunting the castle's depths.
+     * Low defense but hits hard; AggressiveStrategy means its attacks deal 1.5× raw
+     * damage before defense, making it dangerous even to well-armoured players.
+     * Drops an Elixir — a nod to the corrupted energy it feeds on.
+     */
+    private static Enemy createVoidWraith() {
+        Enemy wraith = new Enemy(
+            "Void Wraith",
+            45, 18, 3, 20,
+            "A formless entity of swirling shadow energy. It has no face — only\n" +
+            "  two burning violet eyes that fix on you with terrible hunger."
+        );
+        wraith.setAttackStrategy(new AggressiveStrategy());
+        wraith.addLootItem(ItemFactory.create(ItemType.ELIXIR));
+        return wraith;
+    }
+
+    /**
+     * Tree Protector (enemy form) — the guardian of the Mystic Glade when the
+     * player chooses to fight instead of befriend.
+     * He is ancient and powerful in spirit but physically weak — he was never
+     * meant to be a warrior. Drops the Forest Gem (visible in the sacred oak).
+     */
+    private static Enemy createTreeProtectorEnemy() {
+        Enemy protector = new Enemy(
+            "Tree Protector",
+            35, 6, 2, 0,
+            "A figure woven from living bark and ancient roots. He did not choose\n" +
+            "  this fight — but he will not flee from it."
+        );
+        protector.setAttackStrategy(new RandomStrategy());
+        protector.addLootItem(ItemFactory.create(ItemType.FOREST_GEM));
+        return protector;
     }
 }

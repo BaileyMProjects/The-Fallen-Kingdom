@@ -12,6 +12,8 @@ import events.QuestObserver;
 import events.GameEvent;
 import events.GameEventType;
 import items.Item;
+import items.ItemFactory;
+import items.ItemType;
 import quests.QuestManager;
 import util.Command;
 import util.CommandParser;
@@ -152,7 +154,8 @@ public class Game {
             case INVENTORY:  handleInventory();      break;
             case USE:        handleUse(command);     break;
             case EQUIP:      handleEquip(command);   break;
-            case TALK:       handleTalk(command);    break;
+            case TALK:       handleTalk(command);     break;
+            case BEFRIEND:   handleBefriend(command); break;
             case ATTACK:     handleAttack(command);  break;
             case SOLVE:      handleSolve();          break;
             case BUY:        handleBuy(command);     break;
@@ -327,9 +330,24 @@ public class Game {
                 player.addGold(enemy.getGoldDrop());
                 System.out.println("You found " + enemy.getGoldDrop() + " gold.");
             }
+
+            boolean isTreeProtector = enemy.getName().equalsIgnoreCase("Tree Protector");
             for (Item loot : enemy.getLootItems()) {
                 world.getCurrentLocation().addItem(loot);
-                System.out.println(enemy.getName() + " dropped: " + loot.getName() + ".");
+                if (isTreeProtector) {
+                    System.out.println("\nAs the Tree Protector crumbles into bark and ash,");
+                    System.out.println("the ancient oak behind him shudders and sways.");
+                    System.out.println("A faint emerald glow pulses deep within its hollow.");
+                    System.out.println("You notice a " + loot.getName() + " nestled in the tree.");
+                } else {
+                    System.out.println(enemy.getName() + " dropped: " + loot.getName() + ".");
+                }
+            }
+
+            if (isTreeProtector) {
+                // Remove the Tree Protector NPC version as well
+                NPC npc = world.getCurrentLocation().findNPC("Tree Protector");
+                if (npc != null) world.getCurrentLocation().removeNPC(npc);
             }
 
             // Wait for the typewriter to finish printing the gold/loot lines,
@@ -342,6 +360,38 @@ public class Game {
                 running = false;
             }
         }
+    }
+
+    private void handleBefriend(Command command) {
+        if (!command.hasArgs()) {
+            System.out.println("Befriend whom?");
+            return;
+        }
+        NPC npc = world.getCurrentLocation().findNPC(command.getArgString());
+        if (npc == null) {
+            System.out.println("There's no '" + command.getArgString() + "' to befriend here.");
+            return;
+        }
+        if (!npc.getName().equalsIgnoreCase("Tree Protector")) {
+            System.out.println(npc.getName() + " looks at you curiously. That doesn't seem right here.");
+            return;
+        }
+        // The enemy version must still be present — can't befriend after already fighting
+        Enemy treeEnemy = world.getCurrentLocation().findEnemy("Tree Protector");
+        if (treeEnemy == null) {
+            System.out.println("The Tree Protector watches you silently. The choice has already been made.");
+            return;
+        }
+        world.getCurrentLocation().removeEnemy(treeEnemy);
+        Item boots = ItemFactory.create(ItemType.EVASIVE_BOOTS);
+        player.getInventory().addItem(boots);
+        System.out.println("\nThe Tree Protector's amber eyes warm with ancient light.");
+        System.out.println("\"Wise choice, adventurer. You carry no shadow-taint in your heart.\"");
+        System.out.println("\"Take these boots — crafted from root-weave and living wind.\"");
+        System.out.println("\"They shall make you fleet and hard to strike down.\"\n");
+        System.out.println("You received: Evasive Boots.");
+        System.out.println("  [+1 defense | enemies have +20% miss chance when attacking you]");
+        eventManager.notify(new GameEvent(GameEventType.PLAYER_STATS_CHANGED, null));
     }
 
     private void handleSolve() {
@@ -414,6 +464,7 @@ public class Game {
         System.out.println("  use <item>           Use an item (e.g. health potion)");
         System.out.println("  equip <item>         Equip a weapon or armour");
         System.out.println("  talk <npc>           Talk to an NPC");
+        System.out.println("  befriend <npc>       Offer friendship instead of combat");
         System.out.println("  attack <enemy>       Attack an enemy");
         System.out.println("  solve                Attempt to solve a puzzle");
         System.out.println("  buy <item>           Buy from a merchant");

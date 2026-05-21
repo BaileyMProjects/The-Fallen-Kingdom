@@ -107,6 +107,9 @@ public class CommandParser {
             case "sell": case "trade":
                 return new Command(CommandType.SELL, args);
 
+            case "befriend": case "friend": case "ally":
+                return new Command(CommandType.BEFRIEND, args);
+
             // ── Combat ───────────────────────────────────────────────────────
             case "attack": case "fight": case "kill": case "hit":
             case "strike": case "slay": case "battle":

@@ -159,4 +159,14 @@ public class Player extends Character {
     public int       getExperience()      { return experience; }
     public Weapon    getEquippedWeapon()  { return equippedWeapon; }
     public Armour    getEquippedArmour()  { return equippedArmour; }
+
+    /**
+     * Returns the additional enemy miss-chance granted by the equipped armour.
+     * 0.0 when no armour is equipped or the armour has no evasion bonus.
+     * The Evasive Boots return 0.20, giving enemies a 30% total miss chance
+     * (10% base + 20% bonus) when attacking the player.
+     */
+    public double getEvasionBonus() {
+        return equippedArmour != null ? equippedArmour.getMissBonus() : 0.0;
+    }
 }

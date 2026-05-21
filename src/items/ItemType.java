@@ -11,16 +11,21 @@ public enum ItemType {
     // Weapons
     IRON_SWORD,
     SHADOW_BLADE,
+    BATTLE_AXE,
 
     // Armour
     LEATHER_ARMOUR,
+    SHADOW_ROBE,
+    EVASIVE_BOOTS,
 
     // Consumables
     HEALTH_POTION,
+    ELIXIR,
 
     // Keys
     ANCIENT_KEY,
 
     // Quest items
-    ANCIENT_RELIC
+    ANCIENT_RELIC,
+    FOREST_GEM
 }

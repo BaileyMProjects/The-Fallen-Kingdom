@@ -7,10 +7,19 @@ package world;
  * making it impossible to reference a location that doesn't exist.
  */
 public enum LocationId {
+    // Original six locations
     VILLAGE,
     DARK_FOREST,
     ANCIENT_RUINS,
     UNDERGROUND_DUNGEON,
     CORRUPTED_CASTLE,
-    SHADOW_THRONE
+    SHADOW_THRONE,
+
+    // Expanded world — pre-castle areas
+    MYSTIC_GLADE,
+    FORGOTTEN_BATTLEFIELD,
+
+    // Expanded world — shadow domain
+    SHADOW_BARRACKS,
+    CURSED_ARCHIVES
 }

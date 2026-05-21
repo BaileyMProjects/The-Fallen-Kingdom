@@ -28,6 +28,7 @@ public enum CommandType {
     TALK,
     BUY,
     SELL,
+    BEFRIEND,   // choose friendship over combat (Tree Protector)
 
     // Combat
     ATTACK,
