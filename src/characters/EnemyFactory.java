@@ -38,13 +38,19 @@ public class EnemyFactory {
 
     public static Enemy create(EnemyType type) {
         switch (type) {
-            case SHADOW_GOBLIN:       return createShadowGoblin();
-            case DARK_KNIGHT:         return createDarkKnight();
-            case SHADOW_LORD:         return createShadowLord();
-            case PLAGUE_RAT:          return createPlagueRat();
-            case STONE_SENTINEL:      return createStoneSentinel();
-            case VOID_WRAITH:         return createVoidWraith();
+            case SHADOW_GOBLIN:        return createShadowGoblin();
+            case DARK_KNIGHT:          return createDarkKnight();
+            case SHADOW_LORD:          return createShadowLord();
+            case PLAGUE_RAT:           return createPlagueRat();
+            case STONE_SENTINEL:       return createStoneSentinel();
+            case VOID_WRAITH:          return createVoidWraith();
             case TREE_PROTECTOR_ENEMY: return createTreeProtectorEnemy();
+            // Divine realm
+            case CORRUPTED_PALADIN:    return createCorruptedPaladin();
+            case RADIANT_STALKER:      return createRadiantStalker();
+            case CELESTIAL_SENTINEL:   return createCelestialSentinel();
+            case FALLEN_SERAPH:        return createFallenSeraph();
+            case THE_ARBITER:          return createTheArbiter();
             default:
                 throw new IllegalArgumentException("Unknown enemy type: " + type);
         }
@@ -163,5 +169,98 @@ public class EnemyFactory {
         protector.setAttackStrategy(new RandomStrategy());
         protector.addLootItem(ItemFactory.create(ItemType.FOREST_GEM));
         return protector;
+    }
+
+    // -------------------------------------------------------------------------
+    // Divine realm enemies
+    // -------------------------------------------------------------------------
+
+    /**
+     * Corrupted Paladin — a fallen holy soldier, the most common divine enemy.
+     * High defense reflects the heavy plate they wore in life.
+     * Rare chance to drop the Corrupted Mace they carry.
+     */
+    private static Enemy createCorruptedPaladin() {
+        Enemy paladin = new Enemy(
+            "Corrupted Paladin",
+            50, 13, 10, 22,
+            "A knight clad in once-gleaming armour now cracked with dark fissures.\n" +
+            "  A divine sigil on their breastplate is crossed out — consumed by shadow."
+        );
+        paladin.setAttackStrategy(new DefensiveStrategy());
+        paladin.addChanceLoot(ItemFactory.create(ItemType.CORRUPTED_MACE), 0.12);
+        paladin.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL),  0.09);
+        return paladin;
+    }
+
+    /**
+     * Radiant Stalker — a fast, lightly armoured hunter of the divine realm.
+     * Aggressive strategy and high attack make it dangerous despite low defense.
+     */
+    private static Enemy createRadiantStalker() {
+        Enemy stalker = new Enemy(
+            "Radiant Stalker",
+            40, 16, 5, 20,
+            "A lithe figure wrapped in tattered white robes, moving with unsettling\n" +
+            "  speed. Its eyes burn gold — something divine still lingers in it."
+        );
+        stalker.setAttackStrategy(new AggressiveStrategy());
+        stalker.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.08);
+        return stalker;
+    }
+
+    /**
+     * Celestial Sentinel — the divine equivalent of the Stone Sentinel.
+     * Very high HP and defense; drops good gold and crystals.
+     * The primary farming target in the Celestial Barracks arena.
+     */
+    private static Enemy createCelestialSentinel() {
+        Enemy sentinel = new Enemy(
+            "Celestial Sentinel",
+            85, 17, 15, 32,
+            "A towering construct of divine stone and golden runes, animated by the\n" +
+            "  last embers of celestial war-magic. Each step shakes the ground."
+        );
+        sentinel.setAttackStrategy(new DefensiveStrategy());
+        sentinel.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.10);
+        return sentinel;
+    }
+
+    /**
+     * Fallen Seraph — the most dangerous regular enemy in the divine realm.
+     * Aggressive and fast; the main threat in the Barracks wave and the Vault.
+     */
+    private static Enemy createFallenSeraph() {
+        Enemy seraph = new Enemy(
+            "Fallen Seraph",
+            70, 22, 7, 38,
+            "A winged figure, its feathers the colour of ash and dried blood.\n" +
+            "  It moves in bursts of terrifying speed, golden eyes devoid of mercy."
+        );
+        seraph.setAttackStrategy(new AggressiveStrategy());
+        seraph.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
+        seraph.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.09);
+        return seraph;
+    }
+
+    /**
+     * The Arbiter — the divine area's supreme guardian and optional boss.
+     * 220 HP, the highest of any enemy. Drops the Seraphic Blade and a
+     * guaranteed Divine Crystal. Does NOT extend Boss — defeating him does
+     * not end the game.
+     */
+    private static Enemy createTheArbiter() {
+        Enemy arbiter = new Enemy(
+            "The Arbiter",
+            220, 26, 18, 0,
+            "A towering figure of celestial armour and blinding light. Once the\n" +
+            "  supreme judge of the divine order — now lost to grief and madness.\n" +
+            "  Two enormous wings of shattered light frame him like a broken halo.\n" +
+            "  His voice resonates with a power that shakes the sanctum walls."
+        );
+        arbiter.setAttackStrategy(new AggressiveStrategy());
+        arbiter.addLootItem(ItemFactory.create(ItemType.SERAPHIC_BLADE));
+        arbiter.addLootItem(ItemFactory.create(ItemType.DIVINE_CRYSTAL));
+        return arbiter;
     }
 }
