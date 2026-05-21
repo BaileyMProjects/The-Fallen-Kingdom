@@ -27,7 +27,7 @@ public class DivineEnchanter extends Enchanter {
             "The cost is greater — the power within is far beyond shadow. Type 'enchant <item>'.",
             "The light does not whisper — it blazes. Tier 4 is exceedingly rare, but those " +
             "who receive the Divine blessing carry the full might of the celestial order. " +
-            "Odds: 35% Tier 1 / 30% Tier 2 / 25% Tier 3 / 10% Tier 4 Divine.",
+            "Odds: 40% Tier 1 / 30% Tier 2 / 25% Tier 3 / 5% Tier 4 Divine.",
             "A word of caution: enchanting replaces any existing enchantment, including " +
             "shadow ones. The old power is consumed — celestial energy takes its place."
         });
@@ -67,6 +67,6 @@ public class DivineEnchanter extends Enchanter {
     @Override
     protected String getTalkCostLine() {
         return "\n\n  Cost: 120g (Easy) / 170g (Medium) / 250g (Hard) + 1 Divine Crystal"
-             + "\n  Odds: 35% Tier 1 / 30% Tier 2 / 25% Tier 3 / 10% Tier 4 (Divine)";
+             + "\n  Odds: 40% Tier 1 / 30% Tier 2 / 25% Tier 3 / 5% Tier 4 (Divine)";
     }
 }

@@ -64,12 +64,12 @@ public class EnchantmentFactory {
         return EnchantmentTier.TIER_3;
     }
 
-    /** Divine Enchanter odds: 35% T1 / 30% T2 / 25% T3 / 10% T4. */
+    /** Divine Enchanter odds: 40% T1 / 30% T2 / 25% T3 / 5% T4. */
     private static EnchantmentTier rollDivineTier() {
         double r = RNG.nextDouble();
-        if (r < 0.35) return EnchantmentTier.TIER_1;
-        if (r < 0.65) return EnchantmentTier.TIER_2;
-        if (r < 0.90) return EnchantmentTier.TIER_3;
+        if (r < 0.40) return EnchantmentTier.TIER_1;
+        if (r < 0.70) return EnchantmentTier.TIER_2;
+        if (r < 0.95) return EnchantmentTier.TIER_3;
         return EnchantmentTier.TIER_4;
     }
 

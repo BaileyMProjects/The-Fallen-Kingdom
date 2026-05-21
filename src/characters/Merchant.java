@@ -26,6 +26,7 @@ public class Merchant extends NPC {
     private static final int SELL_PERCENT   = 50;
 
     private final List<Item> shopItems;
+    private int levelRequirement = 0;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -52,6 +53,8 @@ public class Merchant extends NPC {
     // Shop stock management
     // -------------------------------------------------------------------------
 
+    public void setLevelRequirement(int level) { this.levelRequirement = level; }
+
     public void addShopItem(Item item) {
         shopItems.add(item);
     }
@@ -69,6 +72,11 @@ public class Merchant extends NPC {
      * Deducts gold and moves the item from shop stock into the player's inventory.
      */
     public void buyItem(String itemName, Player player) {
+        if (levelRequirement > 0 && player.getLevel() < levelRequirement) {
+            System.out.println("\"My wares are not for the unprepared. Return when you have reached level "
+                    + levelRequirement + ".\"");
+            return;
+        }
         String search = itemName.toLowerCase().trim();
         Item found = shopItems.stream()
                               .filter(i -> i.getName().toLowerCase().contains(search))
@@ -122,6 +130,10 @@ public class Merchant extends NPC {
     @Override
     public String talk(Player player, QuestManager questManager) {
         String greeting = super.talk(player, questManager);
+        if (levelRequirement > 0 && player.getLevel() < levelRequirement) {
+            return greeting + "\n\n  \"Come back when you are level " + levelRequirement
+                    + ". My stock is reserved for those who have proven themselves.\"";
+        }
         if (shopItems.isEmpty()) {
             return greeting + "\n  (I'm sold out — come back if you find more gold!)";
         }

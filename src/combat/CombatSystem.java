@@ -1,5 +1,6 @@
 package combat;
 
+import characters.Boss;
 import characters.Enemy;
 import characters.Player;
 import enchantments.ArmourEnchantment;
@@ -8,6 +9,7 @@ import events.EventManager;
 import events.GameEvent;
 import events.GameEventType;
 import items.Armour;
+import items.CombatPotion;
 import items.Item;
 import items.Potion;
 import util.InputHandler;
@@ -16,22 +18,23 @@ import util.InputHandler;
  * CombatSystem — orchestrates turn-based combat between the player and an enemy.
  *
  * Each round proceeds as:
- *   1. Display both characters' current HP.
- *   2. Player chooses: [A]ttack, [U]se item, or [R]un.
- *   3. Player's action is resolved.
- *   4. If the enemy is still alive, it attacks back using its AttackStrategy.
- *   5. Repeat until one side is defeated or the player escapes.
+ *   1. Apply regen (armour enchant) and poison (weapon enchant / Venom Flask) to start of turn.
+ *   2. Display both characters' current HP.
+ *   3. Player chooses: [A]ttack, [U]se item, or [R]un.
+ *   4. If the player used a CombatPotion, apply pending enemy effects (poison, stun).
+ *   5. If the enemy is still alive, it attacks using its AttackStrategy.
+ *   6. Decrement player combat-buff durations.
+ *   7. Repeat until one side is defeated or the player escapes.
  *
- * STRATEGY PATTERN IN ACTION:
- *   The single line  enemy.getAttackStrategy().calculateDamage(enemy, player)
- *   is where the Strategy pattern does its work.  CombatSystem never checks
- *   enemy type — it just calls the interface.  Swap the strategy object and
- *   the entire combat feel changes.
+ * STRATEGY PATTERN: enemy.getAttackStrategy().calculateDamage() is called once
+ * per enemy attack — no switch on enemy type anywhere in this class.
  *
- * OBSERVER PATTERN INTEGRATION:
- *   On enemy defeat, an ENEMY_DEFEATED event is fired through EventManager so
- *   that QuestManager (and any other observer) can react without CombatSystem
- *   knowing about quests at all.
+ * PHASE TRANSITIONS: after each player attack, checkPhaseTransition() is called
+ * on Boss enemies.  If it fires, the boss fully regenerates and stats increase.
+ *
+ * COMBAT POTIONS: item.use(player) sets pending-effect fields on Player.
+ * applyPendingCombatItemEffects() drains those fields into CombatSystem state
+ * between the player action and the enemy response.
  */
 public class CombatSystem {
 
@@ -63,25 +66,16 @@ public class CombatSystem {
     // Main combat loop
     // -------------------------------------------------------------------------
 
-    /**
-     * Runs a full combat encounter.
-     *
-     * @param player       the player character
-     * @param enemy        the enemy to fight
-     * @param inputHandler used to read player input during combat
-     * @return {@code true}  if the player survived (won or fled),
-     *         {@code false} if the player was killed
-     */
     public boolean executeCombat(Player player, Enemy enemy, InputHandler inputHandler) {
-        // OBSERVER PATTERN: GUI listens for this to switch to CombatPanel
-        // and load the enemy's ASCII art.  Enemy object passed as context.
+        // Reset all per-combat state
         poisonTurnsRemaining = 0;
         poisonDamagePerTurn  = 0;
         enemySlowed          = false;
         enemyStunned         = false;
+        player.clearCombatState();
 
         eventManager.notify(new GameEvent(GameEventType.COMBAT_STARTED, enemy.getName(), enemy));
-        pause(400); // let the GUI finish switching panels before text flows in
+        pause(400);
 
         System.out.println("\n  A " + enemy.getName() + " blocks your path!");
         pause(900);
@@ -126,26 +120,27 @@ public class CombatSystem {
 
             if (!enemy.isAlive()) break;
 
-            // ----------------------------------------------------------------
-            // STRATEGY PATTERN: the enemy attacks using whatever strategy was
-            // injected by EnemyFactory — no if/else on enemy type here.
-            // ----------------------------------------------------------------
+            // Drain any pending effects set by CombatPotion this turn
+            applyPendingCombatItemEffects(player);
+
             pause(700);
             enemyAttack(enemy, player);
             pause(800);
+
+            // Tick down player buff/debuff durations at end of each full turn
+            player.decrementCombatBuffs();
         }
 
         if (!player.isAlive()) {
-            pause(2000); // hold the defeat screen long enough to read the message
+            pause(2000);
             eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
             return false;
         }
 
-        // Enemy defeated
         onEnemyDefeated(player, enemy);
-        pause(2000); // hold the victory moment before returning to exploration
+        pause(2000);
         eventManager.notify(new GameEvent(GameEventType.COMBAT_ENDED, enemy.getName()));
-        pause(500); // let GUI switch back before loot text prints
+        pause(500);
         return true;
     }
 
@@ -158,7 +153,8 @@ public class CombatSystem {
             System.out.println("\n  You swing at " + enemy.getName() + "... and miss!");
             return;
         }
-        int damage = Math.max(1, player.getAttackPower() - enemy.getDefense());
+        int damage = Math.max(1,
+                player.getAttackPower() + player.getCombatAttackBonus() - enemy.getDefense());
         System.out.println("\n  You strike " + enemy.getName() + "...");
         pause(750);
         enemy.takeDamage(damage);
@@ -187,42 +183,67 @@ public class CombatSystem {
             }
 
             if (we.getStunChance() > 0 && Math.random() < we.getStunChance()) {
-                enemyStunned = true;
-                System.out.println("  The force of your blow stuns " + enemy.getName() + "!");
+                if (enemy instanceof Boss && ((Boss) enemy).isImmuneToStun()) {
+                    System.out.println("  Your strike crackles with energy — but " + enemy.getName()
+                            + " shrugs off the stun!");
+                } else {
+                    enemyStunned = true;
+                    System.out.println("  The force of your blow stuns " + enemy.getName() + "!");
+                }
             }
         }
 
-        System.out.println("  " + enemy.getName() + " HP: " + Math.max(0, enemy.getHealth()) + "/" + enemy.getMaxHealth());
+        System.out.println("  " + enemy.getName() + " HP: "
+                + Math.max(0, enemy.getHealth()) + "/" + enemy.getMaxHealth());
+
         if (!enemy.isAlive()) {
             pause(700);
             System.out.println("\n  " + enemy.getName() + " has been defeated!");
+            return;
+        }
+
+        // Phase transition check — only on Boss enemies
+        if (enemy instanceof Boss) {
+            String msg = ((Boss) enemy).checkPhaseTransition();
+            if (msg != null) displayPhaseTransition((Boss) enemy);
         }
     }
 
     private void enemyAttack(Enemy enemy, Player player) {
-        // Check stun — enemy loses entire turn
+        // Stun check
         if (enemyStunned) {
-            System.out.println("\n  " + enemy.getName() + " is stunned and cannot attack!");
-            enemyStunned = false;
-            enemySlowed  = false;
-            return;
+            if (enemy instanceof Boss && ((Boss) enemy).isImmuneToStun()) {
+                System.out.println("\n  " + enemy.getName()
+                        + " shrugs off the stun — in this form they cannot be held!");
+                enemyStunned = false;
+                // fall through — they still attack
+            } else {
+                System.out.println("\n  " + enemy.getName() + " is stunned and cannot attack!");
+                enemyStunned = false;
+                enemySlowed  = false;
+                return;
+            }
         }
-        // Check slow — enemy loses their attack this turn
+
+        // Slow check
         if (enemySlowed) {
-            System.out.println("\n  " + enemy.getName() + " is slowed by the frost and loses their turn!");
+            System.out.println("\n  " + enemy.getName() + " is slowed and loses their turn!");
             enemySlowed = false;
             return;
         }
 
-        // Base 10% miss + any bonus from the player's equipped armour (e.g. Evasive Boots)
-        double totalMiss = BASE_MISS_CHANCE + player.getEvasionBonus();
+        // Miss check: base + player evasion + blind debuff from combat item
+        double blindBonus = player.getPendingEnemyBlindMissBonus() / 100.0;
+        double totalMiss  = BASE_MISS_CHANCE + player.getEvasionBonus() + blindBonus;
         if (Math.random() < totalMiss) {
             System.out.println("\n  " + enemy.getName() + " attacks — but misses you!");
             return;
         }
-        // STRATEGY PATTERN applied here; difficulty multiplier then scales the result
+
+        // Damage calculation — subtract combat defense bonus from incoming damage
         int raw    = enemy.getAttackStrategy().calculateDamage(enemy, player);
-        int damage = (int) Math.max(1, Math.round(raw * enemyDamageMultiplier));
+        int damage = (int) Math.max(1,
+                Math.round(raw * enemyDamageMultiplier) - player.getCombatDefenseBonus());
         System.out.println("\n  " + enemy.getName() + " attacks!");
         pause(750);
         player.takeDamage(damage);
@@ -250,11 +271,7 @@ public class CombatSystem {
 
     /**
      * Handles using a consumable item mid-combat.
-     * Only Potion subclasses are permitted in combat; other items are blocked
-     * with an explanatory message.
-     *
-     * @return true if a valid action was taken (player's turn is consumed),
-     *         false if the player cancelled or made no valid choice
+     * Both Potion and CombatPotion are permitted; all other items are blocked.
      */
     private boolean handleCombatUseItem(Player player, InputHandler inputHandler) {
         if (player.getInventory().isEmpty()) {
@@ -268,17 +285,15 @@ public class CombatSystem {
         System.out.print("  > ");
         String itemName = inputHandler.readInput().trim();
 
-        if (itemName.equalsIgnoreCase("cancel")) {
-            return false;
-        }
+        if (itemName.equalsIgnoreCase("cancel")) return false;
 
         Item item = player.getInventory().findItem(itemName);
         if (item == null) {
             System.out.println("  You don't have a '" + itemName + "'.");
             return false;
         }
-        if (!(item instanceof Potion)) {
-            System.out.println("  You can only use consumable items during combat.");
+        if (!(item instanceof Potion) && !(item instanceof CombatPotion)) {
+            System.out.println("  You can only use potions during combat.");
             return false;
         }
 
@@ -287,11 +302,22 @@ public class CombatSystem {
     }
 
     /**
-     * Attempts to flee.  50% chance of success.
-     * On failure the enemy gets one free attack as a penalty.
-     *
-     * @return true if the player successfully escaped
+     * Drains pending enemy effects that a CombatPotion set on the Player this turn
+     * and applies them to CombatSystem state so they take effect on the enemy's
+     * upcoming attack or the following turn's poison tick.
      */
+    private void applyPendingCombatItemEffects(Player player) {
+        int poisonDmg   = player.drainPendingPoisonDamage();
+        int poisonTurns = player.drainPendingPoisonTurns();
+        if (poisonDmg > 0) {
+            poisonDamagePerTurn  = poisonDmg;
+            poisonTurnsRemaining = poisonTurns;
+        }
+        if (player.drainPendingEnemyStun()) {
+            enemyStunned = true;
+        }
+    }
+
     private boolean attemptFlee(Player player, Enemy enemy, InputHandler inputHandler) {
         System.out.println("\n  You attempt to flee...");
         pause(900);
@@ -303,6 +329,24 @@ public class CombatSystem {
         pause(600);
         enemyAttack(enemy, player);
         return false;
+    }
+
+    // -------------------------------------------------------------------------
+    // Phase transition display
+    // -------------------------------------------------------------------------
+
+    private void displayPhaseTransition(Boss boss) {
+        pause(500);
+        System.out.println("\n  ══════════════════════════════════════════════════");
+        System.out.println("  " + boss.getName().toUpperCase() + " LET OUT A TERRIFYING ROAR!");
+        pause(900);
+        System.out.println("  Darkness erupts from its form — it is REFORMING!");
+        pause(1000);
+        System.out.println("  The air turns to ice. A second power awakens...");
+        pause(900);
+        System.out.println("  HP FULLY RESTORED. PHASE 2 BEGINS.");
+        System.out.println("  ══════════════════════════════════════════════════\n");
+        pause(1400);
     }
 
     // -------------------------------------------------------------------------
@@ -352,10 +396,6 @@ public class CombatSystem {
         return total;
     }
 
-    private static void pause(int ms) {
-        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
-    }
-
     // -------------------------------------------------------------------------
     // Post-combat
     // -------------------------------------------------------------------------
@@ -363,14 +403,11 @@ public class CombatSystem {
     private void onEnemyDefeated(Player player, Enemy enemy) {
         int xp = Math.max(5, enemy.getMaxHealth() / 2);
         player.gainExperience(xp);
-
-        // OBSERVER PATTERN: notify all subscribers that an enemy was defeated.
-        // QuestManager listens for this to track kill-based quest progress.
         eventManager.notify(new GameEvent(GameEventType.ENEMY_DEFEATED, enemy.getName()));
     }
 
     // -------------------------------------------------------------------------
-    // Display helper
+    // Display / utility
     // -------------------------------------------------------------------------
 
     private void printCombatStatus(Player player, Enemy enemy) {
@@ -379,5 +416,9 @@ public class CombatSystem {
                 + "    |    "
                 + enemy.getName()
                 + "  HP: " + enemy.getHealth() + "/" + enemy.getMaxHealth());
+    }
+
+    private static void pause(int ms) {
+        try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 }
