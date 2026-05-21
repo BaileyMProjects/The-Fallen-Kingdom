@@ -33,6 +33,7 @@ import util.InputHandler;
 public class CombatSystem {
 
     private final EventManager eventManager;
+    private double             enemyDamageMultiplier = 1.0;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -40,6 +41,11 @@ public class CombatSystem {
 
     public CombatSystem(EventManager eventManager) {
         this.eventManager = eventManager;
+    }
+
+    /** Called by Game after the player selects a difficulty. */
+    public void setDamageMultiplier(double multiplier) {
+        this.enemyDamageMultiplier = multiplier;
     }
 
     // -------------------------------------------------------------------------
@@ -143,8 +149,9 @@ public class CombatSystem {
     }
 
     private void enemyAttack(Enemy enemy, Player player) {
-        // STRATEGY PATTERN applied here
-        int damage = enemy.getAttackStrategy().calculateDamage(enemy, player);
+        // STRATEGY PATTERN applied here; difficulty multiplier then scales the result
+        int raw    = enemy.getAttackStrategy().calculateDamage(enemy, player);
+        int damage = (int) Math.max(1, Math.round(raw * enemyDamageMultiplier));
         System.out.println("\n  " + enemy.getName() + " attacks!");
         pause(750);
         player.takeDamage(damage);

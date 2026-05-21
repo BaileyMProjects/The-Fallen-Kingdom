@@ -1,9 +1,5 @@
 package core;
 
-// NOTE: This file references classes from all other packages.
-// The project will compile once every batch has been added.
-// See README.md for full compilation instructions.
-
 import characters.Enemy;
 import characters.Merchant;
 import characters.NPC;
@@ -58,6 +54,7 @@ public class Game {
     private InputHandler  inputHandler;
     private CommandParser commandParser;
     private boolean       running;
+    private Difficulty    difficulty = Difficulty.MEDIUM;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -82,12 +79,26 @@ public class Game {
     // Lifecycle
     // -------------------------------------------------------------------------
 
-    /** Called by GameManager.newGame() to begin the game session. */
+    /**
+     * Sets the chosen difficulty before the game thread calls start().
+     * Also propagates the enemy damage multiplier to CombatSystem.
+     */
+    public void setDifficulty(Difficulty d) {
+        this.difficulty = d;
+        this.combatSystem.setDamageMultiplier(d.enemyDamageMultiplier);
+    }
+
+    /** Called on the game thread once a difficulty has been selected. */
     public void start() {
         displayWelcome();
 
-        String name   = inputHandler.promptName();
-        this.player   = new Player(name, 100, 10, 5, 0);
+        String name = inputHandler.promptName();
+        this.player = new Player(
+                name,
+                difficulty.startHp,
+                difficulty.startAttack,
+                difficulty.startDefense,
+                difficulty.startGold);
 
         // Register observers — must happen after player exists
         eventManager.subscribe(questManager);
@@ -98,6 +109,7 @@ public class Game {
         initializeQuests();
 
         System.out.println("\nWelcome, " + name + ". Your adventure begins in the Village.");
+        System.out.println("Difficulty: " + difficulty.label);
         System.out.println("Type 'help' for a list of commands.\n");
         displayLocation();
 

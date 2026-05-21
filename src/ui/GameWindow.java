@@ -1,5 +1,6 @@
 package ui;
 
+import core.Difficulty;
 import core.Game;
 import events.GameObserver;
 
@@ -13,24 +14,27 @@ import java.util.function.Consumer;
  * GameWindow — the root Swing JFrame for The Fallen Kingdom GUI.
  *
  * Responsibilities:
- *   1. Create the Game and enable GUI input mode.
- *   2. Redirect System.out to whichever panel is currently active.
- *   3. Host a CardLayout that switches between ExplorationPanel and
- *      CombatPanel when COMBAT_STARTED / COMBAT_ENDED events fire.
- *   4. Start the game logic on a daemon thread so Swing remains responsive.
- *   5. Route text-field submissions back into InputHandler's BlockingQueue.
+ *   1. Show the MenuPanel on launch so the player can pick a difficulty.
+ *   2. Create the Game and enable GUI input mode.
+ *   3. Redirect System.out to whichever panel is currently active.
+ *   4. Host a CardLayout that switches between MenuPanel, ExplorationPanel,
+ *      and CombatPanel as the game progresses.
+ *   5. Start the game logic on a daemon thread once difficulty is chosen.
+ *   6. Route text-field submissions back into InputHandler's BlockingQueue.
  *
  * The game thread and the Swing EDT never share mutable state directly —
  * all GUI updates are dispatched via SwingUtilities.invokeLater().
  */
 public class GameWindow extends JFrame {
 
+    private static final String MENU_CARD    = "MENU";
     private static final String EXPLORE_CARD = "EXPLORE";
     private static final String COMBAT_CARD  = "COMBAT";
 
     private final Game             game;
     private final CardLayout       cardLayout;
     private final JPanel           cardPanel;
+    private final MenuPanel        menuPanel;
     private final ExplorationPanel explorationPanel;
     private final CombatPanel      combatPanel;
     private final TextAreaStream   outputStream;
@@ -46,17 +50,19 @@ public class GameWindow extends JFrame {
         this.game = new Game();
         this.game.getInputHandler().enableGuiMode();
 
-        // Shared input callback — both panels call this when the player submits
+        // Shared input callback — both gameplay panels call this when player submits
         Consumer<String> onSubmit = text -> game.getInputHandler().provide(text);
 
-        // Build the two screen panels
+        // Build all three screen panels
+        this.menuPanel        = new MenuPanel(this::startGame);
         this.explorationPanel = new ExplorationPanel(onSubmit,
                 (cmd, prefix) -> game.getCompletions(cmd, prefix));
         this.combatPanel      = new CombatPanel(onSubmit);
 
-        // CardLayout container
+        // CardLayout container — menu is the first card shown
         this.cardLayout = new CardLayout();
         this.cardPanel  = new JPanel(cardLayout);
+        cardPanel.add(menuPanel,        MENU_CARD);
         cardPanel.add(explorationPanel, EXPLORE_CARD);
         cardPanel.add(combatPanel,      COMBAT_CARD);
 
@@ -68,14 +74,26 @@ public class GameWindow extends JFrame {
         GuiObserver guiObserver = new GuiObserver(this, explorationPanel, combatPanel, game);
         game.registerObserver(guiObserver);
 
-        // Frame setup
+        // Frame setup — show the menu first; game thread starts after difficulty pick
         setContentPane(cardPanel);
+        cardLayout.show(cardPanel, MENU_CARD);
         setSize(960, 660);
         setMinimumSize(new Dimension(720, 520));
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+    }
 
-        // Game logic runs on a daemon thread — blocks on BlockingQueue for input
+    // -------------------------------------------------------------------------
+    // Difficulty selected — called by MenuPanel on the EDT
+    // -------------------------------------------------------------------------
+
+    private void startGame(Difficulty difficulty) {
+        game.setDifficulty(difficulty);
+
+        // Switch to the exploration view before the game thread starts printing
+        cardLayout.show(cardPanel, EXPLORE_CARD);
+        explorationPanel.requestInputFocus();
+
         Thread gameThread = new Thread(game::start, "game-thread");
         gameThread.setDaemon(true);
         gameThread.start();
