@@ -193,7 +193,7 @@ public class World {
 
         Merchant merchant = new Merchant();
         merchant.addShopItem(ItemFactory.create(ItemType.IRON_SWORD));
-        merchant.addShopItem(ItemFactory.create(ItemType.LEATHER_ARMOUR));
+        merchant.addShopItem(ItemFactory.create(ItemType.LEATHER_CHESTPLATE));
         merchant.addShopItem(ItemFactory.create(ItemType.HEALTH_POTION));
         merchant.addShopItem(ItemFactory.create(ItemType.ELIXIR));
         village.addNPC(merchant);

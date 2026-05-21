@@ -44,7 +44,7 @@ public class ItemFactory {
             case BATTLE_AXE:     return createBattleAxe();
 
             // Armour
-            case LEATHER_ARMOUR: return createLeatherArmour();
+            case LEATHER_CHESTPLATE: return createLeatherChestplate();
             case SHADOW_ROBE:    return createShadowRobe();
             case EVASIVE_BOOTS:  return createEvasiveBoots();
 
@@ -105,41 +105,38 @@ public class ItemFactory {
     // Armour
     // -------------------------------------------------------------------------
 
-    private static Armour createLeatherArmour() {
+    private static Armour createLeatherChestplate() {
         return new Armour(
-            "Leather Armour",
-            "Sturdy tanned leather armour — not glamorous, but it keeps you alive.",
-            20,   // gold value
-            3     // defense bonus
+            "Leather Chestplate",
+            "A sturdy tanned leather chestplate — not glamorous, but it keeps you alive.",
+            20,             // gold value
+            3,              // defense bonus
+            ArmourSlot.TORSO
         );
     }
 
-    /**
-     * Shadow Robe — found in the Shadow Barracks.
-     * Superior defense compared to Leather Armour; imbued with faint shadow energy.
-     */
+    /** Shadow Robe — found in the Shadow Barracks. Torso slot; cannot stack with Leather Chestplate. */
     private static Armour createShadowRobe() {
         return new Armour(
             "Shadow Robe",
             "A robe woven from compressed shadow energy. Cold to the touch but\n" +
             "  surprisingly resilient — the darkness itself deflects blows.",
-            0,    // treasure, not for sale
-            6     // defense bonus
+            0,              // treasure, not for sale
+            6,              // defense bonus
+            ArmourSlot.TORSO
         );
     }
 
-    /**
-     * Evasive Boots — gifted by the Tree Protector on befriending.
-     * Grants +1 defense and adds 20% to the enemy miss-chance when worn.
-     */
+    /** Evasive Boots — gifted by the Tree Protector. Legs slot; adds 20% enemy miss-chance. */
     private static Armour createEvasiveBoots() {
         return new Armour(
             "Evasive Boots",
             "Boots woven from ancient root-fibre and living wind. Light as a leaf,\n" +
             "  they shift your weight just enough to make enemies swing wide.",
-            0,    // gift, not for sale
-            1,    // defense bonus
-            0.20  // +20% enemy miss chance
+            0,              // gift, not for sale
+            1,              // defense bonus
+            0.20,           // +20% enemy miss chance
+            ArmourSlot.LEGS
         );
     }
 

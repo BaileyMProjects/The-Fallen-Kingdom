@@ -13,24 +13,26 @@ import characters.Player;
  */
 public class Armour extends Item {
 
-    private final int    defenseBonus;
-    private final double missBonus;
+    private final int        defenseBonus;
+    private final double     missBonus;
+    private final ArmourSlot slot;
 
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
 
     /** Standard armour with no evasion bonus. */
-    public Armour(String name, String description, int value, int defenseBonus) {
-        this(name, description, value, defenseBonus, 0.0);
+    public Armour(String name, String description, int value, int defenseBonus, ArmourSlot slot) {
+        this(name, description, value, defenseBonus, 0.0, slot);
     }
 
     /** Armour that also grants an additional enemy miss-chance when equipped. */
     public Armour(String name, String description, int value,
-                  int defenseBonus, double missBonus) {
+                  int defenseBonus, double missBonus, ArmourSlot slot) {
         super(name, description, value);
         this.defenseBonus = defenseBonus;
         this.missBonus    = missBonus;
+        this.slot         = slot;
     }
 
     // -------------------------------------------------------------------------
@@ -46,17 +48,21 @@ public class Armour extends Item {
     // Getters
     // -------------------------------------------------------------------------
 
-    public int    getDefenseBonus() { return defenseBonus; }
+    public int        getDefenseBonus() { return defenseBonus; }
+    public ArmourSlot getSlot()         { return slot; }
 
     /**
      * Additional probability (0.0–1.0) that enemy attacks miss the wearer.
      * 0.0 for ordinary armour; 0.20 for the Evasive Boots.
      */
-    public double getMissBonus()    { return missBonus; }
+    public double getMissBonus() { return missBonus; }
 
     @Override
     public String getDescription() {
-        String base = super.getDescription() + "  [+" + defenseBonus + " defense]";
+        String slotLabel = slot.name().charAt(0) + slot.name().substring(1).toLowerCase();
+        String base = super.getDescription()
+                + "  [" + slotLabel + "]"
+                + "  [+" + defenseBonus + " defense]";
         return missBonus > 0
                 ? base + "  [+" + (int)(missBonus * 100) + "% enemy miss chance]"
                 : base;

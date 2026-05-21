@@ -27,7 +27,9 @@ public class Player extends Character {
     private int experienceToNextLevel;
 
     private Weapon equippedWeapon;
-    private Armour equippedArmour;
+    private Armour equippedHead;
+    private Armour equippedTorso;
+    private Armour equippedLegs;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -65,13 +67,15 @@ public class Player extends Character {
 
         } else if (item instanceof Armour) {
             Armour armour = (Armour) item;
-            if (equippedArmour != null) {
-                setDefense(getDefense() - equippedArmour.getDefenseBonus());
-                System.out.println("You unequip " + equippedArmour.getName() + ".");
+            Armour current = getEquippedInSlot(armour.getSlot());
+            if (current != null) {
+                setDefense(getDefense() - current.getDefenseBonus());
+                System.out.println("You unequip " + current.getName() + ".");
             }
-            equippedArmour = armour;
+            setEquippedInSlot(armour);
             setDefense(getDefense() + armour.getDefenseBonus());
             System.out.println("You equip " + armour.getName()
+                    + "  [" + slotLabel(armour.getSlot()) + "]"
                     + "  (+" + armour.getDefenseBonus() + " defense).");
 
         } else {
@@ -140,7 +144,9 @@ public class Player extends Character {
              + "  Exp:     " + experience + "/" + experienceToNextLevel + "\n"
              + "  Gold:    " + gold + "\n"
              + "  Weapon:  " + (equippedWeapon != null ? equippedWeapon.getName() : "none") + "\n"
-             + "  Armour:  " + (equippedArmour != null ? equippedArmour.getName() : "none") + "\n"
+             + "  Head:    " + (equippedHead  != null ? equippedHead.getName()  : "none") + "\n"
+             + "  Torso:   " + (equippedTorso != null ? equippedTorso.getName() : "none") + "\n"
+             + "  Legs:    " + (equippedLegs  != null ? equippedLegs.getName()  : "none") + "\n"
              + "-----------------------";
     }
 
@@ -153,20 +159,50 @@ public class Player extends Character {
     // Getters
     // -------------------------------------------------------------------------
 
-    public Inventory getInventory()       { return inventory; }
-    public int       getGold()            { return gold; }
-    public int       getLevel()           { return level; }
-    public int       getExperience()      { return experience; }
-    public Weapon    getEquippedWeapon()  { return equippedWeapon; }
-    public Armour    getEquippedArmour()  { return equippedArmour; }
+    public Inventory getInventory()      { return inventory; }
+    public int       getGold()           { return gold; }
+    public int       getLevel()          { return level; }
+    public int       getExperience()     { return experience; }
+    public Weapon    getEquippedWeapon() { return equippedWeapon; }
+    public Armour    getEquippedHead()   { return equippedHead; }
+    public Armour    getEquippedTorso()  { return equippedTorso; }
+    public Armour    getEquippedLegs()   { return equippedLegs; }
 
     /**
-     * Returns the additional enemy miss-chance granted by the equipped armour.
-     * 0.0 when no armour is equipped or the armour has no evasion bonus.
-     * The Evasive Boots return 0.20, giving enemies a 30% total miss chance
-     * (10% base + 20% bonus) when attacking the player.
+     * Sums evasion bonuses across all equipped armour slots.
+     * The Evasive Boots (LEGS) contribute 0.20; all other current pieces contribute 0.0.
      */
     public double getEvasionBonus() {
-        return equippedArmour != null ? equippedArmour.getMissBonus() : 0.0;
+        double bonus = 0.0;
+        if (equippedHead  != null) bonus += equippedHead.getMissBonus();
+        if (equippedTorso != null) bonus += equippedTorso.getMissBonus();
+        if (equippedLegs  != null) bonus += equippedLegs.getMissBonus();
+        return bonus;
+    }
+
+    // -------------------------------------------------------------------------
+    // Private slot helpers
+    // -------------------------------------------------------------------------
+
+    private Armour getEquippedInSlot(items.ArmourSlot slot) {
+        switch (slot) {
+            case HEAD:  return equippedHead;
+            case TORSO: return equippedTorso;
+            case LEGS:  return equippedLegs;
+            default:    return null;
+        }
+    }
+
+    private void setEquippedInSlot(Armour armour) {
+        switch (armour.getSlot()) {
+            case HEAD:  equippedHead  = armour; break;
+            case TORSO: equippedTorso = armour; break;
+            case LEGS:  equippedLegs  = armour; break;
+        }
+    }
+
+    private static String slotLabel(items.ArmourSlot slot) {
+        String s = slot.name();
+        return s.charAt(0) + s.substring(1).toLowerCase();
     }
 }

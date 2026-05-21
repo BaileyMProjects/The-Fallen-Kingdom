@@ -14,7 +14,7 @@ public enum ItemType {
     BATTLE_AXE,
 
     // Armour
-    LEATHER_ARMOUR,
+    LEATHER_CHESTPLATE,
     SHADOW_ROBE,
     EVASIVE_BOOTS,
 
