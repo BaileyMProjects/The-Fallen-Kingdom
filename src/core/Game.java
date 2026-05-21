@@ -11,6 +11,7 @@ import events.PlayerObserver;
 import events.QuestObserver;
 import events.GameEvent;
 import events.GameEventType;
+import characters.ArenaMaster;
 import characters.Enchanter;
 import enchantments.WeaponEnchantment;
 import items.Item;
@@ -163,6 +164,7 @@ public class Game {
             case BUY:        handleBuy(command);     break;
             case SELL:       handleSell(command);    break;
             case ENCHANT:    handleEnchant(command); break;
+            case RESPAWN:    handleRespawn();         break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -330,12 +332,12 @@ public class Game {
             System.out.println("You defeated " + enemy.getName() + "!");
 
             if (enemy.getGoldDrop() > 0) {
-                double mult = (player.getEquippedWeapon() instanceof WeaponEnchantment)
+                double enchantMult = (player.getEquippedWeapon() instanceof WeaponEnchantment)
                         ? ((WeaponEnchantment) player.getEquippedWeapon()).getGoldMultiplier()
                         : 1.0;
-                int gold = (int)(enemy.getGoldDrop() * mult);
+                int gold = (int)(enemy.getGoldDrop() * enchantMult * difficulty.goldDropMultiplier);
                 player.addGold(gold);
-                if (mult > 1.0)
+                if (enchantMult > 1.0)
                     System.out.println("Your Lucky enchantment glints — you found " + gold + " gold!");
                 else
                     System.out.println("You found " + gold + " gold.");
@@ -478,6 +480,15 @@ public class Game {
         ((Merchant) npc).sellItem(item, player);
     }
 
+    private void handleRespawn() {
+        ArenaMaster arena = world.getCurrentLocation().findNPCOfType(ArenaMaster.class);
+        if (arena == null) {
+            System.out.println("There is no arena master here. Travel to the Proving Grounds south of Merchant's Village.");
+            return;
+        }
+        arena.respawn(player, world.getCurrentLocation(), difficulty);
+    }
+
     private void handleStats() {
         System.out.println(player.getStatsDisplay());
     }
@@ -502,7 +513,8 @@ public class Game {
         System.out.println("  solve                Attempt to solve a puzzle");
         System.out.println("  buy <item>           Buy from a merchant");
         System.out.println("  sell <item>          Sell to a merchant");
-        System.out.println("  enchant <item>       Enchant gear at an enchanter (30g + Shadow Crystal)");
+        System.out.println("  enchant <item>       Enchant gear at an enchanter (30/50/75g + Shadow Crystal)");
+        System.out.println("  respawn              Pay to respawn enemies in the Proving Grounds arena");
         System.out.println("  stats                View your character statistics");
         System.out.println("  quests               View your quest log");
         System.out.println("  help                 Show this list");
