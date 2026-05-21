@@ -26,39 +26,75 @@ public class EnchantmentFactory {
     // -------------------------------------------------------------------------
 
     /**
-     * Rolls a random enchantment appropriate for the given item and difficulty.
-     * If the item is already enchanted its base (un-enchanted) form is used,
-     * so the old enchantment is replaced rather than stacked.
-     *
-     * @param item       a Weapon or Armour from the player's inventory
-     * @param difficulty the current game difficulty
-     * @return the enchanted item (WeaponEnchantment or ArmourEnchantment)
-     * @throws IllegalArgumentException if item is neither a Weapon nor an Armour
+     * Rolls a random enchantment using the standard Shadow Enchanter odds (60/30/10).
+     * If the item is already enchanted its base form is used (old enchant replaced).
      */
     public static Item roll(Item item, Difficulty difficulty) {
         EnchantmentTier tier = rollTier();
+        return rollForTier(item, difficulty, tier);
+    }
 
-        if (item instanceof WeaponEnchantment) {
-            return rollWeapon(((WeaponEnchantment) item).getBase(), difficulty, tier);
-        } else if (item instanceof Weapon) {
-            return rollWeapon((Weapon) item, difficulty, tier);
-        } else if (item instanceof ArmourEnchantment) {
-            return rollArmour(((ArmourEnchantment) item).getBase(), difficulty, tier);
-        } else if (item instanceof Armour) {
-            return rollArmour((Armour) item, difficulty, tier);
+    /**
+     * Rolls a random enchantment using the Divine Enchanter odds (35/30/25/10).
+     * T4 produces a Divine enchantment; T1-T3 use the same pools as roll().
+     */
+    public static Item rollDivine(Item item, Difficulty difficulty) {
+        EnchantmentTier tier = rollDivineTier();
+
+        if (tier == EnchantmentTier.TIER_4) {
+            Weapon  baseWeapon = unwrapWeapon(item);
+            Armour  baseArmour = unwrapArmour(item);
+            if (baseWeapon != null) return new DivineWeaponEnchantment(baseWeapon, difficulty);
+            if (baseArmour != null) return new DivineArmourEnchantment(baseArmour, difficulty);
+            throw new IllegalArgumentException("Only weapons and armour can be enchanted.");
         }
-        throw new IllegalArgumentException("Only weapons and armour can be enchanted.");
+
+        return rollForTier(item, difficulty, tier);
     }
 
     // -------------------------------------------------------------------------
-    // Tier roll — 60 / 30 / 10
+    // Tier rolls
     // -------------------------------------------------------------------------
 
+    /** Standard Shadow Enchanter odds: 60% T1 / 30% T2 / 10% T3. */
     private static EnchantmentTier rollTier() {
         double r = RNG.nextDouble();
         if (r < 0.60) return EnchantmentTier.TIER_1;
         if (r < 0.90) return EnchantmentTier.TIER_2;
         return EnchantmentTier.TIER_3;
+    }
+
+    /** Divine Enchanter odds: 35% T1 / 30% T2 / 25% T3 / 10% T4. */
+    private static EnchantmentTier rollDivineTier() {
+        double r = RNG.nextDouble();
+        if (r < 0.35) return EnchantmentTier.TIER_1;
+        if (r < 0.65) return EnchantmentTier.TIER_2;
+        if (r < 0.90) return EnchantmentTier.TIER_3;
+        return EnchantmentTier.TIER_4;
+    }
+
+    // -------------------------------------------------------------------------
+    // Shared dispatch
+    // -------------------------------------------------------------------------
+
+    private static Item rollForTier(Item item, Difficulty difficulty, EnchantmentTier tier) {
+        Weapon baseWeapon = unwrapWeapon(item);
+        Armour baseArmour = unwrapArmour(item);
+        if (baseWeapon != null) return rollWeapon(baseWeapon, difficulty, tier);
+        if (baseArmour != null) return rollArmour(baseArmour, difficulty, tier);
+        throw new IllegalArgumentException("Only weapons and armour can be enchanted.");
+    }
+
+    private static Weapon unwrapWeapon(Item item) {
+        if (item instanceof WeaponEnchantment) return ((WeaponEnchantment) item).getBase();
+        if (item instanceof Weapon)            return (Weapon) item;
+        return null;
+    }
+
+    private static Armour unwrapArmour(Item item) {
+        if (item instanceof ArmourEnchantment) return ((ArmourEnchantment) item).getBase();
+        if (item instanceof Armour)            return (Armour) item;
+        return null;
     }
 
     // -------------------------------------------------------------------------

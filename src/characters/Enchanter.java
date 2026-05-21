@@ -13,10 +13,13 @@ import quests.QuestManager;
 /**
  * Enchanter — a specialised NPC that applies random enchantments to gear.
  *
- * Extends NPC with an enchant() method.  The cost is always 30 gold +
- * 1 Shadow Crystal.  EnchantmentFactory handles the random tier roll and
- * enchantment selection; Enchanter handles the player-facing interaction,
- * cost deduction, and inventory/equipment swap.
+ * Extends NPC with an enchant() method.  EnchantmentFactory handles the
+ * random tier roll and enchantment selection; Enchanter handles the
+ * player-facing interaction, cost deduction, and inventory/equipment swap.
+ *
+ * DivineEnchanter subclasses this and overrides the three protected hook
+ * methods to use a different crystal, cost, and enchantment pool — without
+ * duplicating any of the shared validation and swap logic.
  *
  * This class is the consumer of the Decorator pattern: it receives a plain
  * Weapon or Armour, wraps it in an enchantment Decorator, and returns the
@@ -41,36 +44,50 @@ public class Enchanter extends NPC {
         });
     }
 
+    /** Protected constructor for subclasses that supply their own dialogue lines. */
+    protected Enchanter(String name, String description, String[] dialogue) {
+        super(name, description, dialogue);
+    }
+
+    // -------------------------------------------------------------------------
+    // Protected hooks — overridden by DivineEnchanter
+    // -------------------------------------------------------------------------
+
+    protected int    getEnchantCost(Difficulty d)               { return d.enchantCost; }
+    protected String getCrystalSearchName()                     { return "shadow crystal"; }
+    protected String getCrystalDisplayName()                    { return "Shadow Crystal"; }
+    protected String getCrystalSourceHint()                     { return "Aldric sells them in the Merchant's Village, or find them on stronger shadow enemies."; }
+    protected String getChannelFlavour()                        { return "a swirling vortex of shadow energy"; }
+    protected String getCrystalShatterFlavour()                 { return "The crystal shatters. Dark light floods the room."; }
+    protected Item   rollEnchantment(Item item, Difficulty d)   { return EnchantmentFactory.roll(item, d); }
+
     // -------------------------------------------------------------------------
     // Enchanting
     // -------------------------------------------------------------------------
 
     /**
      * Attempts to enchant the given item for the player.
-     *
-     * Requirements: 30 gold + 1 Shadow Crystal in inventory.
-     * The item must be a Weapon or Armour (enchanted or plain).
-     * On success: costs are deducted, old item removed, enchanted item added,
-     * and the item is re-equipped if it was equipped at the time.
+     * Cost and crystal type are determined by the protected hooks so that
+     * DivineEnchanter can reuse all validation and swap logic unchanged.
      */
-    public void enchant(Player player, Item item, Difficulty difficulty) {
+    public final void enchant(Player player, Item item, Difficulty difficulty) {
         if (!(item instanceof Weapon) && !(item instanceof Armour)) {
-            System.out.println(getName() + " examines the item carefully, then shakes her head.");
+            System.out.println(getName() + " examines the item carefully, then shakes their head.");
             System.out.println("\"I can only enchant weapons and armour. This won't do.\"");
             return;
         }
 
-        int cost = difficulty.enchantCost;
+        int cost = getEnchantCost(difficulty);
         if (player.getGold() < cost) {
-            System.out.println("\"The ritual requires " + cost + " gold on your chosen difficulty. You have "
+            System.out.println("\"The ritual requires " + cost + " gold. You have "
                     + player.getGold() + ". Come back when your purse is heavier.\"");
             return;
         }
 
-        Item crystal = player.getInventory().findItem("shadow crystal");
+        Item crystal = player.getInventory().findItem(getCrystalSearchName());
         if (crystal == null) {
-            System.out.println("\"The ritual requires a Shadow Crystal to channel the shadow energy.");
-            System.out.println("  Bring me one — Aldric sells them, or you may find them on stronger enemies.\"");
+            System.out.println("\"The ritual requires a " + getCrystalDisplayName() + ".");
+            System.out.println("  " + getCrystalSourceHint() + "\"");
             return;
         }
 
@@ -86,12 +103,12 @@ public class Enchanter extends NPC {
 
         // Perform enchantment
         System.out.println("\n" + getName() + " takes your " + item.getName()
-                + " and holds it above a swirling vortex of shadow energy...");
+                + " and holds it above " + getChannelFlavour() + "...");
         pause(1200);
-        System.out.println("  The crystal shatters. Dark light floods the room.");
+        System.out.println("  " + getCrystalShatterFlavour());
         pause(1000);
 
-        Item enchanted = EnchantmentFactory.roll(item, difficulty);
+        Item enchanted = rollEnchantment(item, difficulty);
 
         // Swap in inventory
         player.getInventory().removeItem(item);
@@ -113,8 +130,14 @@ public class Enchanter extends NPC {
             tier     = ((ArmourEnchantment) enchanted).getTier();
         }
 
-        String tierLabel = tier == EnchantmentTier.TIER_1 ? "Tier 1"
-                         : tier == EnchantmentTier.TIER_2 ? "Tier 2" : "Tier 3";
+        String tierLabel;
+        switch (tier) {
+            case TIER_1: tierLabel = "Tier 1";         break;
+            case TIER_2: tierLabel = "Tier 2";         break;
+            case TIER_3: tierLabel = "Tier 3";         break;
+            case TIER_4: tierLabel = "Tier 4 — DIVINE"; break;
+            default:     tierLabel = tier.name();      break;
+        }
 
         System.out.println("\n  A flash of arcane light — the ritual is complete!");
         pause(700);
@@ -129,16 +152,19 @@ public class Enchanter extends NPC {
 
     @Override
     public String talk(Player player, QuestManager questManager) {
-        return super.talk(player, questManager)
-                + "\n\n  Cost: 30g (Easy) / 50g (Medium) / 75g (Hard) + 1 Shadow Crystal"
-                + "\n  Odds: 60% Tier 1 / 30% Tier 2 / 10% Tier 3";
+        return super.talk(player, questManager) + getTalkCostLine();
+    }
+
+    protected String getTalkCostLine() {
+        return "\n\n  Cost: 30g (Easy) / 50g (Medium) / 75g (Hard) + 1 Shadow Crystal"
+             + "\n  Odds: 60% Tier 1 / 30% Tier 2 / 10% Tier 3";
     }
 
     // -------------------------------------------------------------------------
     // Utility
     // -------------------------------------------------------------------------
 
-    private static void pause(int ms) {
+    protected static void pause(int ms) {
         try { Thread.sleep(ms); } catch (InterruptedException e) { Thread.currentThread().interrupt(); }
     }
 }

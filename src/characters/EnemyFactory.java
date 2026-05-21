@@ -87,12 +87,16 @@ public class EnemyFactory {
     private static Enemy createShadowLord() {
         Boss shadowLord = new Boss(
             "Shadow Lord",
-            120, 20, 10, 0,
+            200, 22, 12, 0,
             "A being of pure darkness standing twice the height of a man.\n" +
-            "  His eyes burn with ancient malice. The air grows cold around him."
+            "  His eyes burn with ancient malice. The air grows cold around him.\n" +
+            "  You sense that he is holding something back — a second darkness\n" +
+            "  coiled within, waiting for the moment he is pushed to the edge."
         );
         shadowLord.setAttackStrategy(new AggressiveStrategy());
         shadowLord.addLootItem(ItemFactory.create(ItemType.ANCIENT_RELIC));
+        // Phase 2 triggers at ≤100 HP: +6 attack, +4 defense, stun immune, full regen
+        shadowLord.setPhase2Boosts(6, 4);
         return shadowLord;
     }
 
