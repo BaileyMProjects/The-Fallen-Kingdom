@@ -26,6 +26,31 @@ public class ItemFactory {
     private ItemFactory() {}
 
     // -------------------------------------------------------------------------
+    // Reverse name lookup — used by the save system to reconstruct ground items
+    // -------------------------------------------------------------------------
+
+    private static final java.util.Map<String, ItemType> NAME_TO_TYPE = buildNameMap();
+
+    private static java.util.Map<String, ItemType> buildNameMap() {
+        java.util.Map<String, ItemType> map = new java.util.HashMap<>();
+        for (ItemType type : ItemType.values()) {
+            try { map.put(create(type).getName().toLowerCase(), type); }
+            catch (Exception ignored) {}
+        }
+        return java.util.Collections.unmodifiableMap(map);
+    }
+
+    /**
+     * Creates a new item whose display name matches the given string (case-insensitive).
+     * Returns null for enchanted items or unknown names — callers must handle null.
+     */
+    public static Item findByName(String name) {
+        if (name == null) return null;
+        ItemType type = NAME_TO_TYPE.get(name.toLowerCase().trim());
+        return type != null ? create(type) : null;
+    }
+
+    // -------------------------------------------------------------------------
     // Factory method
     // -------------------------------------------------------------------------
 

@@ -9,15 +9,17 @@ import characters.EnemyType;
 import characters.Merchant;
 import characters.NPC;
 import characters.Player;
+import core.Difficulty;
 import events.EventManager;
 import items.Item;
 import items.ItemFactory;
 import items.ItemType;
 import puzzles.LeverPuzzle;
 import puzzles.RiddlePuzzle;
+import save.GameSnapshot;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * World — builds and manages the entire location graph.
@@ -62,6 +64,12 @@ public class World {
     private       Location                  currentLocation;
     private final Player                    player;
     private final EventManager              eventManager;
+
+    /**
+     * Exits that were explicitly locked during initializeWorld().
+     * Tracked so captureState() knows which exits to record as "now unlocked."
+     */
+    private final Set<String> initiallyLockedExits = new HashSet<>();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -243,12 +251,14 @@ public class World {
         dungeon.setExit(Direction.NORTH, castle);
         dungeon.lockExit(Direction.NORTH,
             "The iron door is locked solid. You need the Ancient Key to open it.");
+        initiallyLockedExits.add("UNDERGROUND_DUNGEON:NORTH");
         castle.setExit(Direction.SOUTH, dungeon);
 
         // Corrupted Castle ↔ Shadow Throne (locked by puzzle)
         castle.setExit(Direction.NORTH, shadowThrone);
         castle.lockExit(Direction.NORTH,
             "The sealed gate won't budge. A puzzle mechanism on the wall might hold the answer.");
+        initiallyLockedExits.add("CORRUPTED_CASTLE:NORTH");
         shadowThrone.setExit(Direction.SOUTH, castle);
 
         // Corrupted Castle ↔ Shadow Barracks (new)
@@ -664,4 +674,101 @@ public class World {
 
     public Location getCurrentLocation()       { return currentLocation; }
     public Location getLocation(LocationId id) { return locations.get(id); }
+
+    // -------------------------------------------------------------------------
+    // Save / load support
+    // -------------------------------------------------------------------------
+
+    /**
+     * Captures a complete snapshot of current world state for serialization.
+     * Enemy counts cover every location (0 = all defeated).
+     * Ground items are saved by display name for reconstruction via ItemFactory.
+     */
+    public GameSnapshot captureState(Player p, Difficulty d) {
+        Map<String, Integer>      enemyCounts  = new HashMap<>();
+        Map<String, List<String>> groundItems  = new HashMap<>();
+        Set<String>               solved        = new HashSet<>();
+        Set<String>               unlocked      = new HashSet<>();
+
+        for (Map.Entry<LocationId, Location> entry : locations.entrySet()) {
+            String  key = entry.getKey().name();
+            Location loc = entry.getValue();
+
+            enemyCounts.put(key, loc.getEnemies().size());
+
+            groundItems.put(key, loc.getItems().stream()
+                    .map(Item::getName)
+                    .collect(Collectors.toList()));
+
+            if (loc.hasPuzzle() && loc.getPuzzle().isSolved())
+                solved.add(key);
+        }
+
+        for (String exitKey : initiallyLockedExits) {
+            String[] parts  = exitKey.split(":");
+            LocationId locId = LocationId.valueOf(parts[0]);
+            Direction  dir   = Direction.valueOf(parts[1]);
+            Location loc = locations.get(locId);
+            if (loc != null && !loc.isExitLocked(dir))
+                unlocked.add(exitKey);
+        }
+
+        return new GameSnapshot(p, d, currentLocation.getId(),
+                                enemyCounts, groundItems, solved, unlocked);
+    }
+
+    /**
+     * Applies a saved snapshot to this freshly-built world.
+     * After this call the world matches the state at the time of the save.
+     */
+    public void applyState(GameSnapshot snapshot) {
+        // ── Enemy counts ────────────────────────────────────────────────────
+        for (Map.Entry<String, Integer> entry : snapshot.enemyCounts.entrySet()) {
+            try {
+                Location loc = locations.get(LocationId.valueOf(entry.getKey()));
+                if (loc == null) continue;
+                List<characters.Enemy> enemies = new ArrayList<>(loc.getEnemies());
+                int target = entry.getValue();
+                while (enemies.size() > target)
+                    loc.removeEnemy(enemies.remove(enemies.size() - 1));
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // ── Ground items ────────────────────────────────────────────────────
+        for (Map.Entry<String, List<String>> entry : snapshot.groundItems.entrySet()) {
+            try {
+                Location loc = locations.get(LocationId.valueOf(entry.getKey()));
+                if (loc == null) continue;
+                // Clear current items
+                new ArrayList<>(loc.getItems()).forEach(loc::removeItem);
+                // Re-add only the ones that were still there at save time
+                for (String name : entry.getValue()) {
+                    Item item = ItemFactory.findByName(name);
+                    if (item != null) loc.addItem(item);
+                }
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // ── Solved puzzles ──────────────────────────────────────────────────
+        for (String key : snapshot.solvedPuzzles) {
+            try {
+                Location loc = locations.get(LocationId.valueOf(key));
+                if (loc != null && loc.hasPuzzle()) loc.getPuzzle().markSolved();
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // ── Unlocked exits ──────────────────────────────────────────────────
+        for (String exitKey : snapshot.unlockedExits) {
+            try {
+                String[]  parts = exitKey.split(":");
+                Location  loc   = locations.get(LocationId.valueOf(parts[0]));
+                Direction dir   = Direction.valueOf(parts[1]);
+                if (loc != null) loc.unlockExit(dir);
+            } catch (IllegalArgumentException ignored) {}
+        }
+
+        // ── Current location ────────────────────────────────────────────────
+        Location saved = locations.get(snapshot.locationId);
+        if (saved != null) currentLocation = saved;
+    }
 }

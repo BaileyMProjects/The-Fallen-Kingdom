@@ -61,4 +61,7 @@ public abstract class Puzzle {
     public boolean isSolved()      { return solved; }
     public String  getName()       { return name; }
     public String  getDescription(){ return description; }
+
+    /** Called by the save system to restore solved state without running the puzzle. */
+    public void markSolved() { this.solved = true; }
 }

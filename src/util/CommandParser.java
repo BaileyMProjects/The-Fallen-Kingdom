@@ -136,6 +136,9 @@ public class CommandParser {
                 return new Command(CommandType.HELP, new String[0]);
 
             // ── Meta ─────────────────────────────────────────────────────────
+            case "save":
+                return new Command(CommandType.SAVE, args);
+
             case "quit": case "exit": case "bye": case "q":
                 return new Command(CommandType.QUIT, new String[0]);
 

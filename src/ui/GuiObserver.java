@@ -5,7 +5,6 @@ import characters.Player;
 import core.Game;
 import events.GameEvent;
 import events.GameObserver;
-import util.AsciiArtLoader;
 
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -63,8 +62,7 @@ public class GuiObserver implements GameObserver {
             case COMBAT_STARTED:
                 if (event.getContext() instanceof Enemy) {
                     currentEnemy = (Enemy) event.getContext();
-                    String art = AsciiArtLoader.load(currentEnemy.getName());
-                    combatPanel.setAsciiArt(art);
+                    combatPanel.setEnemySprite(currentEnemy.getName());
                     combatPanel.setEnemyName(currentEnemy.getName());
                     refreshHpBars();
                     startHpTimer();

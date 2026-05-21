@@ -13,7 +13,9 @@ package characters;
  *   Polymorphism  — getDescription() is overridden by each subclass.
  *   Inheritance   — Player, Enemy, and NPC all extend this class.
  */
-public abstract class Character {
+public abstract class Character implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private String name;
     private int    health;

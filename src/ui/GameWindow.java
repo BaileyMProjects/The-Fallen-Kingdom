@@ -3,6 +3,8 @@ package ui;
 import core.Difficulty;
 import core.Game;
 import events.GameObserver;
+import save.GameSnapshot;
+import save.SaveManager;
 
 import javax.swing.*;
 import java.awt.*;
@@ -54,7 +56,7 @@ public class GameWindow extends JFrame {
         Consumer<String> onSubmit = text -> game.getInputHandler().provide(text);
 
         // Build all three screen panels
-        this.menuPanel        = new MenuPanel(this::startGame);
+        this.menuPanel        = new MenuPanel(this::startGame, this::loadGame);
         this.explorationPanel = new ExplorationPanel(onSubmit,
                 (cmd, prefix) -> game.getCompletions(cmd, prefix));
         this.combatPanel      = new CombatPanel(onSubmit);
@@ -95,6 +97,27 @@ public class GameWindow extends JFrame {
         explorationPanel.requestInputFocus();
 
         Thread gameThread = new Thread(game::start, "game-thread");
+        gameThread.setDaemon(true);
+        gameThread.start();
+    }
+
+    // -------------------------------------------------------------------------
+    // Load from save slot — called by MenuPanel on the EDT
+    // -------------------------------------------------------------------------
+
+    private void loadGame(int slot) {
+        GameSnapshot snapshot = SaveManager.load(slot);
+        if (snapshot == null) {
+            JOptionPane.showMessageDialog(this,
+                    "Save slot " + slot + " could not be loaded.",
+                    "Load failed", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        cardLayout.show(cardPanel, EXPLORE_CARD);
+        explorationPanel.requestInputFocus();
+
+        Thread gameThread = new Thread(() -> game.startFromSnapshot(snapshot), "game-thread");
         gameThread.setDaemon(true);
         gameThread.start();
     }

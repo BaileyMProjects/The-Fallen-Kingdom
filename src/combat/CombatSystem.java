@@ -198,7 +198,11 @@ public class CombatSystem {
 
         if (!enemy.isAlive()) {
             pause(700);
-            System.out.println("\n  " + enemy.getName() + " has been defeated!");
+            if (enemy.getName().equalsIgnoreCase("Shadow Lord")) {
+                displayShadowLordDeath();
+            } else {
+                System.out.println("\n  " + enemy.getName() + " has been defeated!");
+            }
             return;
         }
 
@@ -340,6 +344,16 @@ public class CombatSystem {
         System.out.println("\n  ══════════════════════════════════════════════════");
         System.out.println("  " + boss.getName().toUpperCase() + " LET OUT A TERRIFYING ROAR!");
         pause(900);
+
+        if (boss.getName().equalsIgnoreCase("Shadow Lord")) {
+            System.out.println("  \"You think darkness can be extinguished?!");
+            pause(600);
+            System.out.println("   I AM the darkness — I have endured since before your");
+            pause(600);
+            System.out.println("   kingdom drew its first breath, and I will outlast you!\"");
+            pause(800);
+        }
+
         System.out.println("  Darkness erupts from its form — it is REFORMING!");
         pause(1000);
         System.out.println("  The air turns to ice. A second power awakens...");
@@ -347,6 +361,30 @@ public class CombatSystem {
         System.out.println("  HP FULLY RESTORED. PHASE 2 BEGINS.");
         System.out.println("  ══════════════════════════════════════════════════\n");
         pause(1400);
+    }
+
+    private void displayShadowLordDeath() {
+        System.out.println("\n  The Shadow Lord staggers. Black ichor seeps from wounds");
+        System.out.println("  that glow with fading purple light.");
+        pause(1200);
+        System.out.println("\n  \"Impossible... this power... I cannot...\"");
+        pause(800);
+        System.out.println("  He reaches toward the obsidian throne with a trembling hand.");
+        pause(1000);
+        System.out.println("  \"The relic... the darkness... it cannot... end...\"");
+        pause(1200);
+        System.out.println("\n  A silence falls like a held breath. The dark crystals on");
+        System.out.println("  the throne crack one by one, each shattering with a sound");
+        System.out.println("  like a distant bell.");
+        pause(1400);
+        System.out.println("\n  \"Remember... adventurer... darkness is not destroyed...\"");
+        pause(900);
+        System.out.println("  His voice drops to barely a whisper.");
+        pause(700);
+        System.out.println("  \"...it merely... waits.\"");
+        pause(1600);
+        System.out.println("\n  The Shadow Lord's form collapses into shadow and is gone.");
+        pause(1000);
     }
 
     // -------------------------------------------------------------------------

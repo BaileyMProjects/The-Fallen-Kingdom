@@ -14,7 +14,9 @@ import java.util.List;
  * A maximum capacity is enforced so the player cannot carry unlimited items,
  * adding a light resource-management dimension to the game.
  */
-public class Inventory {
+public class Inventory implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private static final int MAX_CAPACITY = 20;
 

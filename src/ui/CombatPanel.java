@@ -1,5 +1,8 @@
 package ui;
 
+import util.AsciiArtLoader;
+import util.EnemyImageLoader;
+
 import javax.swing.*;
 import java.awt.*;
 import java.util.concurrent.ExecutorService;
@@ -30,8 +33,14 @@ public class CombatPanel extends JPanel {
     private static final Color HP_PLAYER  = new Color(70, 190, 70);
     private static final Color HP_ENEMY   = new Color(200, 60, 60);
 
-    private final JTextArea    asciiArt;
-    private final JLabel       enemyNameLabel;
+    private static final String SPRITE_IMAGE = "IMAGE";
+    private static final String SPRITE_TEXT  = "TEXT";
+
+    private final CardLayout spriteLayout;
+    private final JPanel     spritePanel;
+    private final JLabel     spriteImage;
+    private final JTextArea  spriteText;
+    private final JLabel     enemyNameLabel;
     private final JProgressBar playerBar;
     private final JProgressBar enemyBar;
     private final JLabel       playerHpLabel;
@@ -55,25 +64,36 @@ public class CombatPanel extends JPanel {
         super(new BorderLayout(0, 0));
         setBackground(BG_DARK);
 
-        // ── ASCII art display ─────────────────────────────────────────────────
-        asciiArt = new JTextArea("  (no enemy)");
-        asciiArt.setEditable(false);
-        asciiArt.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        asciiArt.setBackground(BG_DARK);
-        asciiArt.setForeground(FG_ART);
-        asciiArt.setMargin(new Insets(10, 20, 6, 20));
-        asciiArt.setAlignmentX(Component.CENTER_ALIGNMENT);
+        // ── Sprite display (image if available, text art fallback) ────────────
+        spriteLayout = new CardLayout();
+        spritePanel  = new JPanel(spriteLayout);
+        spritePanel.setBackground(BG_DARK);
+        spritePanel.setPreferredSize(new Dimension(0, 230));
+
+        spriteImage = new JLabel("", SwingConstants.CENTER);
+        spriteImage.setBackground(BG_DARK);
+        spriteImage.setOpaque(true);
+
+        spriteText = new JTextArea("  (no enemy)");
+        spriteText.setEditable(false);
+        spriteText.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
+        spriteText.setBackground(BG_DARK);
+        spriteText.setForeground(FG_ART);
+        spriteText.setMargin(new Insets(10, 20, 6, 20));
+
+        spritePanel.add(spriteImage, SPRITE_IMAGE);
+        spritePanel.add(spriteText,  SPRITE_TEXT);
 
         enemyNameLabel = new JLabel("", SwingConstants.CENTER);
         enemyNameLabel.setFont(new Font(Font.MONOSPACED, Font.BOLD, 17));
         enemyNameLabel.setForeground(FG_NAME);
         enemyNameLabel.setBorder(BorderFactory.createEmptyBorder(0, 0, 8, 0));
 
-        // Combine art + name into a top block
+        // Combine sprite + name into a top block
         JPanel artBlock = new JPanel(new BorderLayout(0, 4));
         artBlock.setBackground(BG_DARK);
         artBlock.setBorder(BorderFactory.createMatteBorder(0, 0, 1, 0, new Color(60, 30, 80)));
-        artBlock.add(asciiArt,      BorderLayout.CENTER);
+        artBlock.add(spritePanel,    BorderLayout.CENTER);
         artBlock.add(enemyNameLabel, BorderLayout.SOUTH);
 
         // ── HP bars ──────────────────────────────────────────────────────────
@@ -218,9 +238,21 @@ public class CombatPanel extends JPanel {
         SwingUtilities.invokeLater(inputField::requestFocusInWindow);
     }
 
-    /** Display the ASCII art for the current enemy. */
-    public void setAsciiArt(String art) {
-        SwingUtilities.invokeLater(() -> asciiArt.setText(art));
+    /**
+     * Shows a PNG sprite for the enemy if one exists in resources/images/,
+     * otherwise falls back to the text ASCII art from resources/ascii/.
+     */
+    public void setEnemySprite(String enemyName) {
+        SwingUtilities.invokeLater(() -> {
+            ImageIcon icon = EnemyImageLoader.load(enemyName, 380, 220);
+            if (icon != null) {
+                spriteImage.setIcon(icon);
+                spriteLayout.show(spritePanel, SPRITE_IMAGE);
+            } else {
+                spriteText.setText(AsciiArtLoader.load(enemyName));
+                spriteLayout.show(spritePanel, SPRITE_TEXT);
+            }
+        });
     }
 
     /** Display the enemy name in large text above the HP bars. */

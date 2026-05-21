@@ -20,7 +20,9 @@ import characters.Player;
  *   Polymorphism  — use() is overridden to produce completely different
  *                   behaviour in each subclass (equip, heal, unlock, examine).
  */
-public abstract class Item {
+public abstract class Item implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private final String name;
     private final String description;

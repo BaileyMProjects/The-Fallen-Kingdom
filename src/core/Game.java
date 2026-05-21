@@ -25,6 +25,9 @@ import world.Direction;
 import world.Location;
 import world.World;
 
+import save.GameSnapshot;
+import save.SaveManager;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -122,6 +125,38 @@ public class Game {
         gameLoop();
     }
 
+    /**
+     * Starts the game from a previously saved snapshot instead of a new game.
+     * Called by GameWindow when the player clicks a Continue slot button.
+     */
+    public void startFromSnapshot(GameSnapshot snapshot) {
+        this.difficulty = snapshot.difficulty;
+        this.combatSystem.setDamageMultiplier(difficulty.enemyDamageMultiplier);
+        this.player = snapshot.player;
+
+        eventManager.subscribe(questManager);
+        eventManager.subscribe(new QuestObserver());
+        eventManager.subscribe(new PlayerObserver(player));
+
+        this.world = new World(player, eventManager);
+        this.world.applyState(snapshot);
+        initializeQuests();
+
+        System.out.println("\n========================================================");
+        System.out.println("             G A M E   L O A D E D                    ");
+        System.out.println("========================================================");
+        System.out.println("  Welcome back, " + player.getName() + ".");
+        System.out.println("  Difficulty: " + difficulty.label
+                + "  |  Level: " + player.getLevel()
+                + "  |  Gold: " + player.getGold() + "g");
+        System.out.println("========================================================\n");
+
+        displayLocation();
+
+        running = true;
+        gameLoop();
+    }
+
     // -------------------------------------------------------------------------
     // Main loop
     // -------------------------------------------------------------------------
@@ -165,6 +200,7 @@ public class Game {
             case SELL:       handleSell(command);    break;
             case ENCHANT:    handleEnchant(command); break;
             case RESPAWN:    handleRespawn();         break;
+            case SAVE:       handleSave(command);    break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -489,6 +525,27 @@ public class Game {
         arena.respawn(player, world.getCurrentLocation(), difficulty);
     }
 
+    private void handleSave(Command command) {
+        if (!command.hasArgs()) {
+            System.out.println("  Which slot? Use 'save 1', 'save 2', or 'save 3'.");
+            return;
+        }
+        int slot;
+        try {
+            slot = Integer.parseInt(command.getArgString().trim());
+        } catch (NumberFormatException e) {
+            System.out.println("  Use 'save 1', 'save 2', or 'save 3'.");
+            return;
+        }
+        if (slot < 1 || slot > SaveManager.NUM_SLOTS) {
+            System.out.println("  Slot must be 1, 2, or 3.");
+            return;
+        }
+        GameSnapshot snapshot = world.captureState(player, difficulty);
+        SaveManager.save(slot, snapshot);
+        System.out.println("  Game saved to slot " + slot + ".");
+    }
+
     private void handleStats() {
         System.out.println(player.getStatsDisplay());
     }
@@ -515,6 +572,7 @@ public class Game {
         System.out.println("  sell <item>          Sell to a merchant");
         System.out.println("  enchant <item>       Enchant gear at an enchanter (30/50/75g + Shadow Crystal)");
         System.out.println("  respawn              Pay to respawn enemies in an arena (Proving Grounds / Celestial Barracks)");
+        System.out.println("  save <1-3>           Save game to slot 1, 2, or 3");
         System.out.println("  stats                View your character statistics");
         System.out.println("  quests               View your quest log");
         System.out.println("  help                 Show this list");
@@ -546,21 +604,64 @@ public class Game {
     }
 
     private void displayVictory() {
-        System.out.println("\n========================================================");
-        System.out.println("                  V I C T O R Y !                      ");
-        System.out.println("========================================================");
-        System.out.println("  The Shadow Lord has fallen! The Ancient Relic is      ");
-        System.out.println("  restored and the kingdom is saved. You are a hero.    ");
-        System.out.println("========================================================\n");
+        pause(1500);
+        System.out.println("\n════════════════════════════════════════════════════════");
+        System.out.println("                   V I C T O R Y                       ");
+        System.out.println("════════════════════════════════════════════════════════");
+        pause(800);
+        System.out.println("\n  As the Shadow Lord's form dissolves, a faint light");
+        System.out.println("  pulses from the centre of the throne room.");
+        pause(1000);
+        System.out.println("\n  The shattered Ancient Relic — its pieces scattered by");
+        System.out.println("  the curse — begins to draw together. Fragment by");
+        System.out.println("  fragment, it reassembles in a flood of warm golden light.");
+        pause(1200);
+        System.out.println("\n  The shadow corruption on the walls peels away. The");
+        System.out.println("  purple crystals shatter. The kingdom breathes again.");
+        pause(1000);
+        System.out.println("\n  You carry the relic out into the open air. The sky");
+        System.out.println("  above the corrupted kingdom — dark for so long —");
+        System.out.println("  begins to clear. Stars appear where only emptiness");
+        System.out.println("  stood before.");
+        pause(1400);
+        System.out.println("\n  The shadow followers scatter without their lord.");
+        System.out.println("  The people who fled to hidden places will slowly return.");
+        System.out.println("  The kingdom will take time to heal, but it will heal.");
+        pause(1200);
+        System.out.println("\n  ── " + player.getName() + " — the hero of the fallen kingdom. ──");
+        pause(1000);
+        System.out.println("\n  But somewhere north, beyond the Forgotten Battlefield,");
+        System.out.println("  something ancient and divine still stirs. The Arbiter");
+        System.out.println("  waits. That is a battle for another day — if you");
+        System.out.println("  choose to return.");
+        pause(1600);
+        System.out.println("\n════════════════════════════════════════════════════════");
+        System.out.println("              T H A N K S   F O R   P L A Y I N G      ");
+        System.out.println("════════════════════════════════════════════════════════\n");
     }
 
     private void displayDefeat() {
-        System.out.println("\n========================================================");
-        System.out.println("               G A M E   O V E R                       ");
-        System.out.println("========================================================");
-        System.out.println("  You have fallen in battle. The Shadow Lord's darkness ");
-        System.out.println("  consumes the kingdom. Perhaps another hero will rise. ");
-        System.out.println("========================================================\n");
+        pause(1500);
+        System.out.println("\n════════════════════════════════════════════════════════");
+        System.out.println("                  G A M E   O V E R                    ");
+        System.out.println("════════════════════════════════════════════════════════");
+        pause(800);
+        System.out.println("\n  You fall. The darkness closes in around you,");
+        System.out.println("  cold and absolute.");
+        pause(1000);
+        System.out.println("\n  The last thing you see is the Shadow Lord standing");
+        System.out.println("  above you — or whatever enemy has cut you down —");
+        System.out.println("  its eyes burning with ancient indifference.");
+        pause(1200);
+        System.out.println("\n  The Ancient Relic stays shattered. The shadow");
+        System.out.println("  corruption will spread unchecked. The villages");
+        System.out.println("  will empty. The ruins will crumble further.");
+        pause(1200);
+        System.out.println("\n  The world will forget there was ever light.");
+        pause(1400);
+        System.out.println("\n  ── Perhaps another adventurer will rise where you fell. ──");
+        pause(1000);
+        System.out.println("\n════════════════════════════════════════════════════════\n");
     }
 
     // -------------------------------------------------------------------------
