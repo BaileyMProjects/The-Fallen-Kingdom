@@ -2,6 +2,7 @@ package util;
 
 import java.util.Scanner;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
@@ -28,6 +29,7 @@ public class InputHandler {
     private final Scanner              scanner;
     private final BlockingQueue<String> guiInputQueue;
     private       boolean              guiMode;
+    private volatile CountDownLatch    enterLatch = null;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -98,13 +100,43 @@ public class InputHandler {
 
     /**
      * Delivers a line of text from the GUI to the waiting game thread.
-     * Called from the Swing EDT (Batch 12) — thread-safe via BlockingQueue.
+     * Called from the Swing EDT — thread-safe via BlockingQueue.
      *
      * @param input the player's text exactly as typed (trimmed by the caller)
      */
     public void provide(String input) {
-        if (input != null) {
+        if (input != null && !input.isEmpty()) {
             guiInputQueue.offer(input.trim());
         }
+    }
+
+    /**
+     * Blocks the calling thread until signalEnter() is called (GUI mode)
+     * or the player presses Enter in console mode.
+     * Used for "Press Enter to continue" gates after combat.
+     */
+    public void waitForEnter() {
+        if (guiMode) {
+            CountDownLatch latch = new CountDownLatch(1);
+            this.enterLatch = latch;
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                this.enterLatch = null;
+            }
+        } else {
+            if (scanner.hasNextLine()) scanner.nextLine();
+        }
+    }
+
+    /**
+     * Releases any thread blocked in waitForEnter().
+     * Called from the Swing EDT when the player presses Enter with an empty field.
+     */
+    public void signalEnter() {
+        CountDownLatch latch = this.enterLatch;
+        if (latch != null) latch.countDown();
     }
 }

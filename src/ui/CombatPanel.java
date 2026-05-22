@@ -148,10 +148,9 @@ public class CombatPanel extends JPanel {
 
         Runnable doSubmit = () -> {
             String text = inputField.getText().trim();
-            if (!text.isEmpty()) {
-                inputField.setText("");
-                onSubmit.accept(text);
-            }
+            inputField.setText("");
+            // Empty Enter unblocks any post-combat "Press Enter to continue" gate.
+            onSubmit.accept(text);
         };
         inputField.addActionListener(e -> doSubmit.run());
         sendBtn.addActionListener(e -> doSubmit.run());

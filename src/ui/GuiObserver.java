@@ -74,6 +74,11 @@ public class GuiObserver implements GameObserver {
             case COMBAT_ENDED:
                 stopHpTimer();
                 currentEnemy = null;
+                // Don't switch panels here — Game.handleAttack fires RETURN_FROM_COMBAT
+                // after the player presses Enter to dismiss the post-combat screen.
+                break;
+
+            case RETURN_FROM_COMBAT:
                 gameWindow.switchToExplore();
                 refreshSidebar();
                 break;

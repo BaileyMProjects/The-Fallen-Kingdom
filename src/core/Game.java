@@ -416,8 +416,14 @@ public class Game {
             if (enemy.isBoss()) {
                 displayVictory();
                 running = false;
+                return;
             }
         }
+
+        // Non-boss victory or successful flee: gate on Enter before returning to exploration.
+        System.out.println("\n  [ Press Enter to continue... ]");
+        inputHandler.waitForEnter();
+        eventManager.notify(new GameEvent(GameEventType.RETURN_FROM_COMBAT, null));
     }
 
     private void handleBefriend(Command command) {

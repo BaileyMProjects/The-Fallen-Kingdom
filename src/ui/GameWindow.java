@@ -52,8 +52,15 @@ public class GameWindow extends JFrame {
         this.game = new Game();
         this.game.getInputHandler().enableGuiMode();
 
-        // Shared input callback — both gameplay panels call this when player submits
-        Consumer<String> onSubmit = text -> game.getInputHandler().provide(text);
+        // Shared input callback — both gameplay panels call this when player submits.
+        // Empty string means Enter was pressed with no text: unblock any waitForEnter().
+        Consumer<String> onSubmit = text -> {
+            if (text.isEmpty()) {
+                game.getInputHandler().signalEnter();
+            } else {
+                game.getInputHandler().provide(text);
+            }
+        };
 
         // Build all three screen panels
         this.menuPanel        = new MenuPanel(this::startGame, this::loadGame);

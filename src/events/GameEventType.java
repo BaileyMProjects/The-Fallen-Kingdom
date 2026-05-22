@@ -19,6 +19,9 @@ public enum GameEventType {
     /** Fired by CombatSystem when a fight ends (win, loss, or flee). */
     COMBAT_ENDED,
 
+    /** Fired by Game after the player presses Enter to dismiss the post-combat screen. */
+    RETURN_FROM_COMBAT,
+
     /** Fired by CombatSystem after the enemy's HP reaches zero. */
     ENEMY_DEFEATED,
 

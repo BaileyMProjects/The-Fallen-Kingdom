@@ -43,6 +43,7 @@ public class ExplorationPanel extends JPanel {
     private static final int CHAR_DELAY_MS = 22;
 
     private volatile boolean     instantMode    = false;
+    private volatile boolean     skipCurrent    = false;
     private final StringBuilder  fullHistory    = new StringBuilder();
     private final StringBuilder  currentPage    = new StringBuilder();
     private boolean              historyMode    = false;
@@ -117,13 +118,16 @@ public class ExplorationPanel extends JPanel {
 
         Runnable doSubmit = () -> {
             String text = inputField.getText().trim();
-            if (!text.isEmpty()) {
-                inputField.setText("");
-                if (text.equalsIgnoreCase("history") || text.equalsIgnoreCase("log")) {
-                    toggleHistory();
-                } else {
-                    onSubmit.accept(text);
-                }
+            inputField.setText("");
+            if (text.isEmpty()) {
+                // Empty Enter: skip the current typewriter segment and unblock any
+                // post-combat "Press Enter to continue" gate.
+                requestSkip();
+                onSubmit.accept("");
+            } else if (text.equalsIgnoreCase("history") || text.equalsIgnoreCase("log")) {
+                toggleHistory();
+            } else {
+                onSubmit.accept(text);
             }
         };
         inputField.addActionListener(e -> doSubmit.run());
@@ -155,6 +159,15 @@ public class ExplorationPanel extends JPanel {
 
     public void requestInputFocus() {
         SwingUtilities.invokeLater(inputField::requestFocusInWindow);
+    }
+
+    /**
+     * Signals the typewriter to finish the currently typing segment instantly.
+     * Subsequent segments still type out normally until this is called again.
+     * Safe to call from the EDT.
+     */
+    public void requestSkip() {
+        skipCurrent = true;
     }
 
     /** Replace the character-stats block with fresh text. */
@@ -256,19 +269,52 @@ public class ExplorationPanel extends JPanel {
      * prevents stale characters from appearing on the new page.
      */
     private void typewriteText(String text, long version) {
+        // Skip: if requested before this segment began, flush the whole thing instantly.
+        if (skipCurrent) {
+            skipCurrent = false;
+            SwingUtilities.invokeLater(() -> {
+                if (pageVersion.get() == version) {
+                    outputArea.append(text);
+                    outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                }
+            });
+            return;
+        }
+
+        char[] chars = text.toCharArray();
         StringBuilder line = new StringBuilder();
-        for (char c : text.toCharArray()) {
+        for (int i = 0; i < chars.length; i++) {
             if (pageVersion.get() != version) return;
+            char c = chars[i];
             line.append(c);
-            if (c == '\n') {
-                dispatchLine(line.toString(), version);
+            // Dispatch at each newline and at the final character (partial last line).
+            if (c == '\n' || i == chars.length - 1) {
+                boolean skipped = dispatchLine(line.toString(), version);
                 line.setLength(0);
+                if (skipped) {
+                    // dispatchLine flushed the rest of its line; flush remaining lines.
+                    skipCurrent = false;
+                    int nextIdx = i + 1;
+                    if (nextIdx < chars.length) {
+                        final String rest = new String(chars, nextIdx, chars.length - nextIdx);
+                        SwingUtilities.invokeLater(() -> {
+                            if (pageVersion.get() == version) {
+                                outputArea.append(rest);
+                                outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                            }
+                        });
+                    }
+                    return;
+                }
             }
         }
-        if (line.length() > 0) dispatchLine(line.toString(), version);
     }
 
-    private void dispatchLine(String line, long version) {
+    /**
+     * Dispatches a single line to the output area, character by character.
+     * Returns true if a skip was detected mid-line (remaining chars already flushed).
+     */
+    private boolean dispatchLine(String line, long version) {
         if (isDecorativeLine(line)) {
             SwingUtilities.invokeLater(() -> {
                 if (pageVersion.get() == version) {
@@ -276,24 +322,37 @@ public class ExplorationPanel extends JPanel {
                     outputArea.setCaretPosition(outputArea.getDocument().getLength());
                 }
             });
-        } else {
-            for (char c : line.toCharArray()) {
-                if (pageVersion.get() != version) return;
-                final char fc = c;
+            return false;
+        }
+        char[] chars = line.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            if (pageVersion.get() != version) return false;
+            if (skipCurrent) {
+                // Flush remaining chars of this line instantly; caller flushes the rest.
+                final String remaining = new String(chars, i, chars.length - i);
                 SwingUtilities.invokeLater(() -> {
                     if (pageVersion.get() == version) {
-                        outputArea.append(String.valueOf(fc));
+                        outputArea.append(remaining);
                         outputArea.setCaretPosition(outputArea.getDocument().getLength());
                     }
                 });
-                try {
-                    Thread.sleep(CHAR_DELAY_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                    return;
+                return true;
+            }
+            final char fc = chars[i];
+            SwingUtilities.invokeLater(() -> {
+                if (pageVersion.get() == version) {
+                    outputArea.append(String.valueOf(fc));
+                    outputArea.setCaretPosition(outputArea.getDocument().getLength());
                 }
+            });
+            try {
+                Thread.sleep(CHAR_DELAY_MS);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return false;
             }
         }
+        return false;
     }
 
     /**
