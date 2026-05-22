@@ -48,6 +48,8 @@ public enum CommandType {
     SAVE,
     MAP,
 
+    OPTEST,
+
     /** Returned when the input does not match any known command. */
     UNKNOWN
 }

@@ -202,6 +202,7 @@ public class Game {
             case RESPAWN:    handleRespawn();         break;
             case SAVE:       handleSave(command);    break;
             case MAP:        handleMap();            break;
+            case OPTEST:     handleOpTest();         break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -594,6 +595,12 @@ public class Game {
         System.out.println("  quit                 Exit the game");
         System.out.println("------------------------------------------------------------\n");
         System.out.print('');
+    }
+
+    private void handleOpTest() {
+        player.addGold(9999);
+        player.gainExperience(9999);
+        System.out.println("[OPTEST] +9999 gold, +9999 XP applied.");
     }
 
     private void handleQuit() {
