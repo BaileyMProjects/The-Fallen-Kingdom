@@ -44,5 +44,8 @@ public enum GameEventType {
     LOCATION_CHANGED,
 
     /** Fired after gold/loot is awarded so the sidebar refreshes with the correct values. */
-    PLAYER_STATS_CHANGED
+    PLAYER_STATS_CHANGED,
+
+    /** Fired when the player types "map" — GUI opens the MapDialog. */
+    SHOW_MAP
 }

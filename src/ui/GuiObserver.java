@@ -5,6 +5,7 @@ import characters.Player;
 import core.Game;
 import events.GameEvent;
 import events.GameObserver;
+import world.LocationId;
 
 import javax.swing.SwingUtilities;
 import javax.swing.Timer;
@@ -93,6 +94,16 @@ public class GuiObserver implements GameObserver {
 
             case PLAYER_STATS_CHANGED:
                 refreshSidebar();
+                break;
+
+            case SHOW_MAP:
+                if (event.getContext() instanceof LocationId) {
+                    LocationId loc = (LocationId) event.getContext();
+                    Player     p   = game.getPlayer();
+                    java.util.Set<LocationId>     vis  = p != null ? p.getVisitedLocations() : java.util.Collections.emptySet();
+                    java.util.Map<LocationId,Integer> lvl = game.getWorld().getLevelRequirements();
+                    SwingUtilities.invokeLater(() -> new MapDialog(gameWindow, loc, vis, lvl));
+                }
                 break;
 
             case LOCATION_CHANGED:

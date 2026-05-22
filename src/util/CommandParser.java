@@ -139,6 +139,9 @@ public class CommandParser {
             case "save":
                 return new Command(CommandType.SAVE, args);
 
+            case "map": case "/map":
+                return new Command(CommandType.MAP, new String[0]);
+
             case "quit": case "exit": case "bye": case "q":
                 return new Command(CommandType.QUIT, new String[0]);
 

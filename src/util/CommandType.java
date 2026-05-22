@@ -46,6 +46,7 @@ public enum CommandType {
     // Meta
     QUIT,
     SAVE,
+    MAP,
 
     /** Returned when the input does not match any known command. */
     UNKNOWN

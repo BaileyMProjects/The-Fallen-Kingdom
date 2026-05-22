@@ -4,6 +4,11 @@ import items.Armour;
 import items.Inventory;
 import items.Item;
 import items.Weapon;
+import world.LocationId;
+
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Player — the human-controlled character.
@@ -43,6 +48,8 @@ public class Player extends Character {
     private int     pendingEnemyBlindMissBonus;  // as a percentage e.g. 30 = 30%
     private int     pendingEnemyBlindTurns;
     private boolean pendingEnemyStun;
+
+    private Set<LocationId> visitedLocations = new HashSet<>();
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -268,6 +275,24 @@ public class Player extends Character {
         if (equippedTorso != null) bonus += equippedTorso.getMissBonus();
         if (equippedLegs  != null) bonus += equippedLegs.getMissBonus();
         return bonus;
+    }
+
+    // -------------------------------------------------------------------------
+    // Exploration tracking
+    // -------------------------------------------------------------------------
+
+    public void markVisited(LocationId id) {
+        if (visitedLocations == null) visitedLocations = new HashSet<>();
+        visitedLocations.add(id);
+    }
+
+    public boolean hasVisited(LocationId id) {
+        return visitedLocations != null && visitedLocations.contains(id);
+    }
+
+    public Set<LocationId> getVisitedLocations() {
+        if (visitedLocations == null) visitedLocations = new HashSet<>();
+        return Collections.unmodifiableSet(visitedLocations);
     }
 
     // -------------------------------------------------------------------------

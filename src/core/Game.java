@@ -201,6 +201,7 @@ public class Game {
             case ENCHANT:    handleEnchant(command); break;
             case RESPAWN:    handleRespawn();         break;
             case SAVE:       handleSave(command);    break;
+            case MAP:        handleMap();            break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -525,6 +526,11 @@ public class Game {
         arena.respawn(player, world.getCurrentLocation(), difficulty);
     }
 
+    private void handleMap() {
+        eventManager.notify(new GameEvent(GameEventType.SHOW_MAP, "map",
+                world.getCurrentLocation().getId()));
+    }
+
     private void handleSave(Command command) {
         if (!command.hasArgs()) {
             System.out.println("  Which slot? Use 'save 1', 'save 2', or 'save 3'.");
@@ -575,6 +581,7 @@ public class Game {
         System.out.println("  save <1-3>           Save game to slot 1, 2, or 3");
         System.out.println("  stats                View your character statistics");
         System.out.println("  quests               View your quest log");
+        System.out.println("  map                  Open the world map");
         System.out.println("  help                 Show this list");
         System.out.println("  quit                 Exit the game");
         System.out.println("------------------------------------------------------------\n");
@@ -744,7 +751,7 @@ public class Game {
     }
 
     // Package-private — used by unit tests
-    World   getWorld()    { return world; }
+    public World   getWorld()    { return world; }
     boolean isRunning()   { return running; }
 
     /** Allows the combat system (or tests) to stop the main loop externally. */

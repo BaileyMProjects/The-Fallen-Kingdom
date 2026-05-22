@@ -38,6 +38,7 @@ public class Location {
     private final List<NPC>   npcs;
 
     private Puzzle puzzle;
+    private int    levelRequirement = 1;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -225,4 +226,6 @@ public class Location {
     public LocationId getId()          { return id; }
     public String     getName()        { return name; }
     public String     getDescription() { return description; }
+    public int  getLevelRequirement()          { return levelRequirement; }
+    public void setLevelRequirement(int level) { this.levelRequirement = level; }
 }

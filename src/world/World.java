@@ -300,6 +300,34 @@ public class World {
         sanctumArbiter.setExit(Direction.NORTH, celestialBarracks);
 
         // ================================================================
+        // LEVEL REQUIREMENTS
+        // Ordered by intended progression — enforced in movePlayer()
+        // ================================================================
+
+        village.setLevelRequirement(1);
+        darkForest.setLevelRequirement(1);
+        merchantVillage.setLevelRequirement(1);
+        provingGrounds.setLevelRequirement(1);
+        ancientRuins.setLevelRequirement(2);
+        mysticGlade.setLevelRequirement(3);
+        dungeon.setLevelRequirement(4);
+        forgottenBattlefield.setLevelRequirement(5);
+        castle.setLevelRequirement(6);
+        shadowBarracks.setLevelRequirement(7);
+        cursedArchives.setLevelRequirement(7);
+        shadowThrone.setLevelRequirement(8);
+        celestialGate.setLevelRequirement(8);
+        sunkenShrine.setLevelRequirement(9);
+        divineForge.setLevelRequirement(9);
+        radiantCathedral.setLevelRequirement(10);
+        vaultOfFallen.setLevelRequirement(10);
+        celestialBarracks.setLevelRequirement(11);
+        sanctumArbiter.setLevelRequirement(12);
+
+        // Mark the starting location as visited
+        player.markVisited(LocationId.VILLAGE);
+
+        // ================================================================
         // POPULATE — NPCs
         // ================================================================
 
@@ -664,7 +692,17 @@ public class World {
             }
         }
 
-        currentLocation = currentLocation.getExit(dir);
+        // Level gate — checked after locks so the lock message takes priority
+        Location destination = currentLocation.getExit(dir);
+        int req = destination.getLevelRequirement();
+        if (player.getLevel() < req) {
+            System.out.println("  The path ahead feels overwhelming. You must reach level "
+                    + req + " before venturing there.  (Your level: " + player.getLevel() + ")");
+            return false;
+        }
+
+        currentLocation = destination;
+        player.markVisited(currentLocation.getId());
         return true;
     }
 
@@ -674,6 +712,13 @@ public class World {
 
     public Location getCurrentLocation()       { return currentLocation; }
     public Location getLocation(LocationId id) { return locations.get(id); }
+
+    public Map<LocationId, Integer> getLevelRequirements() {
+        Map<LocationId, Integer> map = new EnumMap<>(LocationId.class);
+        for (Map.Entry<LocationId, Location> e : locations.entrySet())
+            map.put(e.getKey(), e.getValue().getLevelRequirement());
+        return map;
+    }
 
     // -------------------------------------------------------------------------
     // Save / load support
