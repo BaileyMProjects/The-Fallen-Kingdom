@@ -292,14 +292,17 @@ public class Game {
     }
 
     private void handleInventory() {
+        System.out.print('');
         if (player.getInventory().isEmpty()) {
             System.out.println("Your inventory is empty.");
+            System.out.print('');
             return;
         }
         System.out.println("\n--- Inventory ---");
         player.getInventory().listItems();
         System.out.println("Gold: " + player.getGold());
         System.out.println("-----------------\n");
+        System.out.print('');
     }
 
     private void handleUse(Command command) {
@@ -553,14 +556,19 @@ public class Game {
     }
 
     private void handleStats() {
+        System.out.print('');
         System.out.println(player.getStatsDisplay());
+        System.out.print('');
     }
 
     private void handleQuests() {
+        System.out.print('');
         System.out.println(questManager.getQuestLog());
+        System.out.print('');
     }
 
     private void handleHelp() {
+        System.out.print('');
         System.out.println("\n--- Commands -----------------------------------------------");
         System.out.println("  go <direction>       Move: north, south, east, west");
         System.out.println("  look                 Describe current location");
@@ -585,6 +593,7 @@ public class Game {
         System.out.println("  help                 Show this list");
         System.out.println("  quit                 Exit the game");
         System.out.println("------------------------------------------------------------\n");
+        System.out.print('');
     }
 
     private void handleQuit() {

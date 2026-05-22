@@ -42,6 +42,7 @@ public class ExplorationPanel extends JPanel {
 
     private static final int CHAR_DELAY_MS = 22;
 
+    private volatile boolean     instantMode    = false;
     private final StringBuilder  fullHistory    = new StringBuilder();
     private final StringBuilder  currentPage    = new StringBuilder();
     private boolean              historyMode    = false;
@@ -173,11 +174,26 @@ public class ExplorationPanel extends JPanel {
      * Called on the EDT via TextAreaStream.
      */
     public void appendText(String text) {
+        if ("".equals(text)) { instantMode = true;  return; }
+        if ("".equals(text)) { instantMode = false; return; }
+
         fullHistory.append(text);
         currentPage.append(text);
         if (!historyMode) {
             final long version = pageVersion.get();
-            typewriterPool.submit(() -> typewriteText(text, version));
+            if (instantMode) {
+                typewriterPool.submit(() -> {
+                    if (pageVersion.get() != version) return;
+                    SwingUtilities.invokeLater(() -> {
+                        if (pageVersion.get() == version) {
+                            outputArea.append(text);
+                            outputArea.setCaretPosition(outputArea.getDocument().getLength());
+                        }
+                    });
+                });
+            } else {
+                typewriterPool.submit(() -> typewriteText(text, version));
+            }
         }
     }
 
