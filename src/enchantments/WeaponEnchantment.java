@@ -1,6 +1,9 @@
 package enchantments;
 
 import items.Weapon;
+import items.WeaponSpecialAttack;
+
+import java.util.List;
 
 /**
  * WeaponEnchantment — abstract Decorator for Weapon (Decorator design pattern).
@@ -66,6 +69,17 @@ public abstract class WeaponEnchantment extends Weapon {
 
     /** Multiplier applied to enemy gold drops (1.0 = no change). */
     public double getGoldMultiplier() { return 1.0; }
+
+    // -------------------------------------------------------------------------
+    // Weapon special-attack delegation — all calls forwarded to the base weapon
+    // -------------------------------------------------------------------------
+
+    @Override public List<WeaponSpecialAttack> getSpecials()                  { return getBase().getSpecials(); }
+    @Override public void addSpecialAttack(WeaponSpecialAttack s)             { getBase().addSpecialAttack(s); }
+    @Override public int  getCooldown(String name)                            { return getBase().getCooldown(name); }
+    @Override public void setCooldown(String name, int turns)                 { getBase().setCooldown(name, turns); }
+    @Override public void tickCooldowns()                                     { getBase().tickCooldowns(); }
+    @Override public void resetCooldowns()                                    { getBase().resetCooldowns(); }
 
     // -------------------------------------------------------------------------
     // Getters

@@ -1,6 +1,7 @@
 package characters;
 
 import combat.AttackStrategy;
+import combat.EnemySpecialAttack;
 import combat.RandomStrategy;
 import items.Item;
 
@@ -30,6 +31,7 @@ public class Enemy extends Character {
     private final List<Item> lootItems;
     private final List<Item>   chanceLootItems;
     private final List<Double> chanceLootChances;
+    private final List<EnemySpecialAttack> specialAttacks = new ArrayList<>();
     private final String     description;
 
     // -------------------------------------------------------------------------
@@ -92,6 +94,20 @@ public class Enemy extends Character {
             }
         }
         return dropped;
+    }
+
+    // -------------------------------------------------------------------------
+    // Special attacks
+    // -------------------------------------------------------------------------
+
+    public void addSpecialAttack(EnemySpecialAttack s) { specialAttacks.add(s); }
+
+    /** Rolls each registered special in order; returns the first that fires, or null. */
+    public EnemySpecialAttack rollSpecialAttack() {
+        for (EnemySpecialAttack s : specialAttacks) {
+            if (RNG.nextDouble() < s.chance) return s;
+        }
+        return null;
     }
 
     // -------------------------------------------------------------------------

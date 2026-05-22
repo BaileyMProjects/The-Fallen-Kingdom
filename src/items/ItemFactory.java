@@ -145,13 +145,24 @@ public class ItemFactory {
     }
 
     private static Weapon createShadowBlade() {
-        return new Weapon(
+        Weapon blade = new Weapon(
             "Shadow Blade",
             "A blade forged from crystallised shadow energy. It hums with dark power\n" +
             "  and feels unnaturally light in your hand.",
             0,    // not for sale
             15    // attack bonus
         );
+        blade.addSpecialAttack(new WeaponSpecialAttack(
+            "Shadow Strike",
+            "You channel the blade's dark energy into a strike that bypasses armour!",
+            1.8, true, 0.0, 0.25, 3
+        ));
+        blade.addSpecialAttack(new WeaponSpecialAttack(
+            "Soul Rend",
+            "The blade tears at the enemy's essence, returning dark energy to you!",
+            2.0, false, 0.30, 0.0, 4
+        ));
+        return blade;
     }
 
     /**
@@ -159,53 +170,103 @@ public class ItemFactory {
      * Higher attack than the Iron Sword but slower feel (lore-only difference).
      */
     private static Weapon createBattleAxe() {
-        return new Weapon(
+        Weapon axe = new Weapon(
             "Battle Axe",
             "A weathered battle axe salvaged from the ruined battlefield. Heavy and\n" +
             "  brutal — each swing carries the weight of a forgotten war.",
             18,   // sell value
             12    // attack bonus
         );
+        axe.addSpecialAttack(new WeaponSpecialAttack(
+            "Cleave",
+            "You swing the axe in a brutal arc, smashing through the enemy's guard!",
+            2.0, false, 0.0, 0.35, 3
+        ));
+        return axe;
     }
 
     private static Weapon createHolySpear() {
-        return new Weapon(
+        Weapon spear = new Weapon(
             "Holy Spear",
             "A long spear tipped with a head of condensed holy light. It hums faintly\n" +
             "  and feels warm even in the coldest reaches of the divine realm.",
             65,   // gold value
             18    // attack bonus
         );
+        spear.addSpecialAttack(new WeaponSpecialAttack(
+            "Holy Thrust",
+            "You channel holy light through the spear tip, piercing all defences!",
+            1.8, true, 0.20, 0.0, 3
+        ));
+        spear.addSpecialAttack(new WeaponSpecialAttack(
+            "Radiant Sweep",
+            "The spear's holy aura sweeps outward, draining the enemy's life force!",
+            1.4, false, 0.35, 0.0, 4
+        ));
+        return spear;
     }
 
     private static Weapon createAureateSword() {
-        return new Weapon(
+        Weapon sword = new Weapon(
             "Aureate Sword",
             "A blade forged from gold-veined divine steel. Its edge never dulls and\n" +
             "  a faint luminescence trails each swing.",
             80,   // gold value
             20    // attack bonus
         );
+        sword.addSpecialAttack(new WeaponSpecialAttack(
+            "Golden Slash",
+            "You bring the aureate blade down with the weight of divine power!",
+            2.0, false, 0.0, 0.35, 3
+        ));
+        sword.addSpecialAttack(new WeaponSpecialAttack(
+            "Divine Edge",
+            "The sword's divine edge cuts through even the mightiest of defences!",
+            2.5, true, 0.0, 0.0, 5
+        ));
+        return sword;
     }
 
     private static Weapon createCorruptedMace() {
-        return new Weapon(
+        Weapon mace = new Weapon(
             "Corrupted Mace",
             "A heavy mace once carried by a paladin of the celestial order. Dark\n" +
             "  cracks run along the head where shadow energy has seeped into the metal.",
             0,    // drop only
             17    // attack bonus
         );
+        mace.addSpecialAttack(new WeaponSpecialAttack(
+            "Shattering Blow",
+            "You bring the mace down with crushing force — the impact shakes your bones!",
+            2.0, false, 0.0, 0.40, 3
+        ));
+        mace.addSpecialAttack(new WeaponSpecialAttack(
+            "Dark Drain",
+            "The mace's dark corruption leeches your enemy's vitality, feeding it to you!",
+            1.5, false, 0.50, 0.0, 4
+        ));
+        return mace;
     }
 
     private static Weapon createSeraphicBlade() {
-        return new Weapon(
+        Weapon blade = new Weapon(
             "Seraphic Blade",
             "The Arbiter's own weapon — a sword of pure celestial energy that burns\n" +
             "  cold as starlight. The most powerful blade in existence.",
             0,    // boss drop, not for sale
             25    // attack bonus
         );
+        blade.addSpecialAttack(new WeaponSpecialAttack(
+            "Seraphic Strike",
+            "Pure celestial energy surges through the blade — no defence can withstand it!",
+            2.5, true, 0.0, 0.40, 4
+        ));
+        blade.addSpecialAttack(new WeaponSpecialAttack(
+            "Celestial Fury",
+            "You unleash a torrent of celestial fury — the air burns with divine fire!",
+            3.0, false, 0.20, 0.30, 6
+        ));
+        return blade;
     }
 
     // -------------------------------------------------------------------------

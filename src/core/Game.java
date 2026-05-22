@@ -658,11 +658,6 @@ public class Game {
         System.out.println("  The kingdom will take time to heal, but it will heal.");
         pause(1200);
         System.out.println("\n  ── " + player.getName() + " — the hero of the fallen kingdom. ──");
-        pause(1000);
-        System.out.println("\n  But somewhere north, beyond the Forgotten Battlefield,");
-        System.out.println("  something ancient and divine still stirs. The Arbiter");
-        System.out.println("  waits. That is a battle for another day — if you");
-        System.out.println("  choose to return.");
         pause(1600);
         System.out.println("\n════════════════════════════════════════════════════════");
         System.out.println("              T H A N K S   F O R   P L A Y I N G      ");

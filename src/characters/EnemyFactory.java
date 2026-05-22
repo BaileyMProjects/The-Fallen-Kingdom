@@ -2,6 +2,7 @@ package characters;
 
 import combat.AggressiveStrategy;
 import combat.DefensiveStrategy;
+import combat.EnemySpecialAttack;
 import combat.RandomStrategy;
 import items.ItemFactory;
 import items.ItemType;
@@ -63,31 +64,46 @@ public class EnemyFactory {
     private static Enemy createShadowGoblin() {
         Enemy goblin = new Enemy(
             "Shadow Goblin",
-            30, 8, 2, 10,
+            35, 12, 3, 10,
             "A hunched creature wreathed in shadow with glowing red eyes.\n" +
             "  Its movements are twitchy and unpredictable."
         );
         goblin.setAttackStrategy(new RandomStrategy());
+        goblin.addSpecialAttack(new EnemySpecialAttack(
+            "Shadow Swipe",
+            "The goblin dashes through the shadows and swipes at you!",
+            0.20, 1.4, false, 0, false
+        ));
         return goblin;
     }
 
     private static Enemy createDarkKnight() {
         Enemy knight = new Enemy(
             "Dark Knight",
-            70, 15, 8, 25,
+            300, 55, 22, 25,
             "A towering knight clad in black armour that seems to drink the light.\n" +
             "  He moves with slow, measured precision — every step deliberate."
         );
         knight.setAttackStrategy(new DefensiveStrategy());
         knight.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
         knight.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.12);
+        knight.addSpecialAttack(new EnemySpecialAttack(
+            "Shield Bash",
+            "The Dark Knight slams his shield into you, leaving you dazed!",
+            0.25, 1.1, false, 0, true
+        ));
+        knight.addSpecialAttack(new EnemySpecialAttack(
+            "Crushing Strike",
+            "The Dark Knight brings his blade down with devastating power!",
+            0.15, 2.2, false, 0, false
+        ));
         return knight;
     }
 
     private static Enemy createShadowLord() {
         Boss shadowLord = new Boss(
             "Shadow Lord",
-            200, 22, 12, 0,
+            1500, 90, 30, 0,
             "A being of pure darkness standing twice the height of a man.\n" +
             "  His eyes burn with ancient malice. The air grows cold around him.\n" +
             "  You sense that he is holding something back — a second darkness\n" +
@@ -95,8 +111,22 @@ public class EnemyFactory {
         );
         shadowLord.setAttackStrategy(new AggressiveStrategy());
         shadowLord.addLootItem(ItemFactory.create(ItemType.ANCIENT_RELIC));
-        // Phase 2 triggers at ≤100 HP: +6 attack, +4 defense, stun immune, full regen
-        shadowLord.setPhase2Boosts(6, 4);
+        shadowLord.setPhase2Boosts(25, 12);
+        shadowLord.addSpecialAttack(new EnemySpecialAttack(
+            "Shadow Slam",
+            "The Shadow Lord's darkness crashes through your very soul!",
+            0.30, 1.8, true, 0, false
+        ));
+        shadowLord.addSpecialAttack(new EnemySpecialAttack(
+            "Dark Pulse",
+            "A pulse of pure darkness roots you in place — you cannot act!",
+            0.20, 1.0, false, 0, true
+        ));
+        shadowLord.addSpecialAttack(new EnemySpecialAttack(
+            "Corruption Nova",
+            "The Shadow Lord unleashes a nova of corruption, feasting on your suffering!",
+            0.15, 2.2, false, 60, false
+        ));
         return shadowLord;
     }
 
@@ -107,71 +137,96 @@ public class EnemyFactory {
     /**
      * Plague Rat — a sickly swarm enemy found in the Dark Forest and Battlefield.
      * Weak individually but their numbers make them unpredictable.
-     * Uses RandomStrategy to represent erratic swarming behaviour.
      */
     private static Enemy createPlagueRat() {
         Enemy rat = new Enemy(
             "Plague Rat Swarm",
-            25, 6, 1, 5,
+            30, 10, 2, 5,
             "A seething mass of diseased rats that move as one writhing body.\n" +
             "  Their bites are weak but their sheer number is unsettling."
         );
         rat.setAttackStrategy(new RandomStrategy());
         rat.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
+        rat.addSpecialAttack(new EnemySpecialAttack(
+            "Frenzied Swarm",
+            "The rats swarm over you in a frenzy, overwhelming your senses!",
+            0.25, 1.5, false, 0, true
+        ));
         return rat;
     }
 
     /**
      * Stone Sentinel — a heavy golem-like guardian on the Forgotten Battlefield.
-     * High defense makes it durable; DefensiveStrategy means it occasionally
-     * lands a powerful Shield Bash despite its slow nature.
+     * Very high HP and defense; slow but punishing.
      */
     private static Enemy createStoneSentinel() {
         Enemy sentinel = new Enemy(
             "Stone Sentinel",
-            55, 14, 10, 15,
+            380, 45, 30, 15,
             "A massive construct of ancient stone, animated by war-magic long\n" +
             "  since faded. Its fists crack the earth with every step."
         );
         sentinel.setAttackStrategy(new DefensiveStrategy());
         sentinel.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.13);
+        sentinel.addSpecialAttack(new EnemySpecialAttack(
+            "Earthquake Stomp",
+            "The Sentinel's massive foot cracks the ground — the shockwave staggers you!",
+            0.20, 1.6, false, 0, true
+        ));
+        sentinel.addSpecialAttack(new EnemySpecialAttack(
+            "Boulder Fist",
+            "The Sentinel's stone fist smashes into you like a falling boulder!",
+            0.12, 2.0, false, 0, false
+        ));
         return sentinel;
     }
 
     /**
      * Void Wraith — an aggressive shadow-energy creature haunting the castle's depths.
-     * Low defense but hits hard; AggressiveStrategy means its attacks deal 1.5× raw
-     * damage before defense, making it dangerous even to well-armoured players.
-     * Drops an Elixir — a nod to the corrupted energy it feeds on.
+     * Low defense but hits devastatingly hard; specials bypass armour entirely.
      */
     private static Enemy createVoidWraith() {
         Enemy wraith = new Enemy(
             "Void Wraith",
-            45, 18, 3, 20,
+            280, 65, 10, 20,
             "A formless entity of swirling shadow energy. It has no face — only\n" +
             "  two burning violet eyes that fix on you with terrible hunger."
         );
         wraith.setAttackStrategy(new AggressiveStrategy());
         wraith.addLootItem(ItemFactory.create(ItemType.ELIXIR));
         wraith.addChanceLoot(ItemFactory.create(ItemType.SHADOW_CRYSTAL), 0.15);
+        wraith.addSpecialAttack(new EnemySpecialAttack(
+            "Void Drain",
+            "The Wraith phases through your armour, siphoning your very life force!",
+            0.25, 1.3, true, 35, false
+        ));
+        wraith.addSpecialAttack(new EnemySpecialAttack(
+            "Shadow Phase",
+            "The Wraith becomes intangible and strikes directly at your soul!",
+            0.15, 2.0, true, 0, false
+        ));
         return wraith;
     }
 
     /**
      * Tree Protector (enemy form) — the guardian of the Mystic Glade when the
      * player chooses to fight instead of befriend.
-     * He is ancient and powerful in spirit but physically weak — he was never
-     * meant to be a warrior. Drops the Forest Gem (visible in the sacred oak).
+     * Ancient but not a warrior — drops the Forest Gem.
      */
     private static Enemy createTreeProtectorEnemy() {
         Enemy protector = new Enemy(
             "Tree Protector",
-            35, 6, 2, 0,
+            120, 20, 8, 0,
             "A figure woven from living bark and ancient roots. He did not choose\n" +
             "  this fight — but he will not flee from it."
         );
         protector.setAttackStrategy(new RandomStrategy());
         protector.addLootItem(ItemFactory.create(ItemType.FOREST_GEM));
+        protector.addSpecialAttack(new EnemySpecialAttack(
+            "Thorn Lash",
+            "Root-thorns erupt around the Protector, lashing out at you!",
+            0.20, 1.5, false, 0, false
+        ));
         return protector;
     }
 
@@ -180,83 +235,121 @@ public class EnemyFactory {
     // -------------------------------------------------------------------------
 
     /**
-     * Corrupted Paladin — a fallen holy soldier, the most common divine enemy.
-     * High defense reflects the heavy plate they wore in life.
-     * Rare chance to drop the Corrupted Mace they carry.
+     * Corrupted Paladin — a fallen holy soldier, heavily armoured.
+     * High defense and punishing holy specials.
      */
     private static Enemy createCorruptedPaladin() {
         Enemy paladin = new Enemy(
             "Corrupted Paladin",
-            50, 13, 10, 22,
+            360, 65, 28, 22,
             "A knight clad in once-gleaming armour now cracked with dark fissures.\n" +
             "  A divine sigil on their breastplate is crossed out — consumed by shadow."
         );
         paladin.setAttackStrategy(new DefensiveStrategy());
         paladin.addChanceLoot(ItemFactory.create(ItemType.CORRUPTED_MACE), 0.12);
         paladin.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL),  0.09);
+        paladin.addSpecialAttack(new EnemySpecialAttack(
+            "Holy Smite",
+            "The Paladin channels corrupted holy energy into a devastating smite!",
+            0.20, 1.7, true, 0, false
+        ));
+        paladin.addSpecialAttack(new EnemySpecialAttack(
+            "Dark Consecration",
+            "Dark sigils glow on the Paladin's armour as it drains your vitality!",
+            0.15, 1.1, false, 50, false
+        ));
         return paladin;
     }
 
     /**
      * Radiant Stalker — a fast, lightly armoured hunter of the divine realm.
-     * Aggressive strategy and high attack make it dangerous despite low defense.
+     * Aggressive and unpredictable; dangerous at any gear level.
      */
     private static Enemy createRadiantStalker() {
         Enemy stalker = new Enemy(
             "Radiant Stalker",
-            40, 16, 5, 20,
+            300, 75, 18, 20,
             "A lithe figure wrapped in tattered white robes, moving with unsettling\n" +
             "  speed. Its eyes burn gold — something divine still lingers in it."
         );
         stalker.setAttackStrategy(new AggressiveStrategy());
         stalker.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.08);
+        stalker.addSpecialAttack(new EnemySpecialAttack(
+            "Rapid Assault",
+            "The Stalker strikes in a blur of golden light — too fast to track!",
+            0.25, 1.5, false, 0, false
+        ));
+        stalker.addSpecialAttack(new EnemySpecialAttack(
+            "Lunge",
+            "The Stalker lunges past your guard with terrifying precision!",
+            0.15, 2.2, true, 0, false
+        ));
         return stalker;
     }
 
     /**
      * Celestial Sentinel — the divine equivalent of the Stone Sentinel.
-     * Very high HP and defense; drops good gold and crystals.
-     * The primary farming target in the Celestial Barracks arena.
+     * Enormous HP and defense; can partially restore itself mid-fight.
      */
     private static Enemy createCelestialSentinel() {
         Enemy sentinel = new Enemy(
             "Celestial Sentinel",
-            85, 17, 15, 32,
+            520, 60, 38, 32,
             "A towering construct of divine stone and golden runes, animated by the\n" +
             "  last embers of celestial war-magic. Each step shakes the ground."
         );
         sentinel.setAttackStrategy(new DefensiveStrategy());
         sentinel.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.10);
+        sentinel.addSpecialAttack(new EnemySpecialAttack(
+            "Divine Slam",
+            "The Sentinel's celestial fist drives you into the ground!",
+            0.20, 1.8, false, 0, true
+        ));
+        sentinel.addSpecialAttack(new EnemySpecialAttack(
+            "Celestial Renewal",
+            "The Sentinel draws on celestial energy, partially restoring its form!",
+            0.15, 0.5, false, 80, false
+        ));
         return sentinel;
     }
 
     /**
      * Fallen Seraph — the most dangerous regular enemy in the divine realm.
-     * Aggressive and fast; the main threat in the Barracks wave and the Vault.
+     * Aggressive, winged, and capable of stunning blows and armour-ignoring strikes.
      */
     private static Enemy createFallenSeraph() {
         Enemy seraph = new Enemy(
             "Fallen Seraph",
-            70, 22, 7, 38,
+            440, 82, 22, 38,
             "A winged figure, its feathers the colour of ash and dried blood.\n" +
             "  It moves in bursts of terrifying speed, golden eyes devoid of mercy."
         );
         seraph.setAttackStrategy(new AggressiveStrategy());
         seraph.addLootItem(ItemFactory.create(ItemType.HEALTH_POTION));
         seraph.addChanceLoot(ItemFactory.create(ItemType.DIVINE_CRYSTAL), 0.09);
+        seraph.addSpecialAttack(new EnemySpecialAttack(
+            "Wing Blast",
+            "The Seraph beats its massive wings with crushing force, stunning you!",
+            0.25, 1.5, false, 0, true
+        ));
+        seraph.addSpecialAttack(new EnemySpecialAttack(
+            "Divine Strike",
+            "The Seraph channels the last of its divinity into one devastating blow!",
+            0.15, 2.5, true, 0, false
+        ));
         return seraph;
     }
 
     /**
-     * The Arbiter — the divine area's supreme guardian and optional boss.
-     * 220 HP, the highest of any enemy. Drops the Seraphic Blade and a
-     * guaranteed Divine Crystal. Does NOT extend Boss — defeating him does
-     * not end the game.
+     * The Arbiter — the divine realm's supreme guardian and optional super-boss.
+     * SubBoss: defeating him does not end the game, but he uses the full Boss
+     * phase-2 system. Phase 2 triggers at ≤50% HP with full regen + stat surge.
+     * Drops the Seraphic Blade and a guaranteed Divine Crystal.
      */
-    private static Enemy createTheArbiter() {
-        Enemy arbiter = new Enemy(
+    private static SubBoss createTheArbiter() {
+        SubBoss arbiter = new SubBoss(
             "The Arbiter",
-            220, 26, 18, 0,
+            1200, 78, 35, 0,
             "A towering figure of celestial armour and blinding light. Once the\n" +
             "  supreme judge of the divine order — now lost to grief and madness.\n" +
             "  Two enormous wings of shattered light frame him like a broken halo.\n" +
@@ -265,6 +358,22 @@ public class EnemyFactory {
         arbiter.setAttackStrategy(new AggressiveStrategy());
         arbiter.addLootItem(ItemFactory.create(ItemType.SERAPHIC_BLADE));
         arbiter.addLootItem(ItemFactory.create(ItemType.DIVINE_CRYSTAL));
+        arbiter.setPhase2Boosts(20, 10);
+        arbiter.addSpecialAttack(new EnemySpecialAttack(
+            "Divine Judgment",
+            "The Arbiter renders final judgment — your defences mean nothing before it!",
+            0.25, 2.0, true, 0, false
+        ));
+        arbiter.addSpecialAttack(new EnemySpecialAttack(
+            "Celestial Smite",
+            "The Arbiter's celestial hammer drives you to your knees in holy fire!",
+            0.20, 1.6, false, 0, true
+        ));
+        arbiter.addSpecialAttack(new EnemySpecialAttack(
+            "Divine Retribution",
+            "The Arbiter channels your pain into divine restoration!",
+            0.15, 1.5, false, 70, false
+        ));
         return arbiter;
     }
 }
