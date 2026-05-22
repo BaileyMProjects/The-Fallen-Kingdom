@@ -61,7 +61,7 @@ public class Player extends Character {
         this.gold                  = startingGold;
         this.level                 = 1;
         this.experience            = 0;
-        this.experienceToNextLevel = 100;
+        this.experienceToNextLevel = 25;
     }
 
     // -------------------------------------------------------------------------
@@ -129,7 +129,7 @@ public class Player extends Character {
         setHealth(getMaxHealth());                      // fully heal on level-up
         setAttackPower(getAttackPower() + atkGain);
         setDefense(getDefense() + defGain);
-        experienceToNextLevel = (int)(experienceToNextLevel * 1.5);
+        experienceToNextLevel = (int)(experienceToNextLevel * 1.4);
         System.out.println("*** LEVEL UP! You are now Level " + level + " ***");
         System.out.println("  +" + hpGain + " Max HP   +" + atkGain + " Attack   +" + defGain + " Defense");
     }

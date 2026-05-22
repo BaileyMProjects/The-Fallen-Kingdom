@@ -696,8 +696,12 @@ public class World {
         Location destination = currentLocation.getExit(dir);
         int req = destination.getLevelRequirement();
         if (player.getLevel() < req) {
+            String hint = isDivineRealm(destination.getId())
+                    ? "  Train at the Celestial Barracks to level up before proceeding."
+                    : "  Head to the Proving Grounds south of the village to train and level up.";
             System.out.println("  The path ahead feels overwhelming. You must reach level "
                     + req + " before venturing there.  (Your level: " + player.getLevel() + ")");
+            System.out.println(hint);
             return false;
         }
 
@@ -709,6 +713,21 @@ public class World {
     // -------------------------------------------------------------------------
     // Accessors
     // -------------------------------------------------------------------------
+
+    private static boolean isDivineRealm(LocationId id) {
+        switch (id) {
+            case CELESTIAL_GATE:
+            case SUNKEN_SHRINE:
+            case DIVINE_FORGE:
+            case RADIANT_CATHEDRAL:
+            case VAULT_OF_THE_FALLEN:
+            case CELESTIAL_BARRACKS:
+            case SANCTUM_OF_THE_ARBITER:
+                return true;
+            default:
+                return false;
+        }
+    }
 
     public Location getCurrentLocation()       { return currentLocation; }
     public Location getLocation(LocationId id) { return locations.get(id); }
