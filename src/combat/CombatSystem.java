@@ -12,7 +12,11 @@ import items.Armour;
 import items.CombatPotion;
 import items.Item;
 import items.Potion;
+import items.Weapon;
+import items.WeaponSpecialAttack;
 import util.InputHandler;
+
+import java.util.List;
 
 /**
  * CombatSystem — orchestrates turn-based combat between the player and an enemy.
@@ -44,10 +48,11 @@ public class CombatSystem {
     private double  enemyDamageMultiplier = 1.0;
 
     // Per-combat state — reset at the start of every executeCombat call
-    private int     poisonTurnsRemaining = 0;
-    private int     poisonDamagePerTurn  = 0;
-    private boolean enemySlowed          = false;
-    private boolean enemyStunned         = false;
+    private int     poisonTurnsRemaining  = 0;
+    private int     poisonDamagePerTurn   = 0;
+    private boolean enemySlowed           = false;
+    private boolean enemyStunned          = false;
+    private boolean playerStunnedNextTurn = false;
 
     // -------------------------------------------------------------------------
     // Constructor
@@ -68,11 +73,13 @@ public class CombatSystem {
 
     public boolean executeCombat(Player player, Enemy enemy, InputHandler inputHandler) {
         // Reset all per-combat state
-        poisonTurnsRemaining = 0;
-        poisonDamagePerTurn  = 0;
-        enemySlowed          = false;
-        enemyStunned         = false;
+        poisonTurnsRemaining  = 0;
+        poisonDamagePerTurn   = 0;
+        enemySlowed           = false;
+        enemyStunned          = false;
+        playerStunnedNextTurn = false;
         player.clearCombatState();
+        if (player.getEquippedWeapon() != null) player.getEquippedWeapon().resetCooldowns();
 
         eventManager.notify(new GameEvent(GameEventType.COMBAT_STARTED, enemy.getName(), enemy));
         pause(400);
@@ -89,32 +96,49 @@ public class CombatSystem {
             printCombatStatus(player, enemy);
             pause(500);
 
-            boolean validAction = false;
-            while (!validAction) {
-                System.out.println("\n  [A] Attack    [U] Use item    [R] Run");
-                String input = inputHandler.readInput().toLowerCase().trim();
+            if (playerStunnedNextTurn) {
+                System.out.println("\n  You are stunned — you cannot act this turn!");
+                playerStunnedNextTurn = false;
+                pause(600);
+            } else {
+                boolean hasSpecials = player.getEquippedWeapon() != null
+                        && !player.getEquippedWeapon().getSpecials().isEmpty();
 
-                switch (input) {
-                    case "a": case "attack":
-                        playerAttack(player, enemy);
-                        validAction = true;
-                        break;
+                boolean validAction = false;
+                while (!validAction) {
+                    if (hasSpecials) {
+                        System.out.println("\n  [A] Attack    [S] Special    [U] Use item    [R] Run");
+                    } else {
+                        System.out.println("\n  [A] Attack    [U] Use item    [R] Run");
+                    }
+                    String input = inputHandler.readInput().toLowerCase().trim();
 
-                    case "u": case "use":
-                        validAction = handleCombatUseItem(player, inputHandler);
-                        break;
+                    switch (input) {
+                        case "a": case "attack":
+                            playerAttack(player, enemy);
+                            validAction = true;
+                            break;
 
-                    case "r": case "run": case "flee":
-                        if (attemptFlee(player, enemy, inputHandler)) {
-                            eventManager.notify(new GameEvent(
-                                    GameEventType.COMBAT_ENDED, enemy.getName()));
-                            return true;
-                        }
-                        validAction = true;
-                        break;
+                        case "s": case "special":
+                            validAction = handleSpecialAttack(player, enemy, inputHandler);
+                            break;
 
-                    default:
-                        System.out.println("  Invalid choice. Type 'a', 'u', or 'r'.");
+                        case "u": case "use":
+                            validAction = handleCombatUseItem(player, inputHandler);
+                            break;
+
+                        case "r": case "run": case "flee":
+                            if (attemptFlee(player, enemy, inputHandler)) {
+                                eventManager.notify(new GameEvent(
+                                        GameEventType.COMBAT_ENDED, enemy.getName()));
+                                return true;
+                            }
+                            validAction = true;
+                            break;
+
+                        default:
+                            System.out.println("  Invalid choice. Type 'a', 's', 'u', or 'r'.");
+                    }
                 }
             }
 
@@ -127,8 +151,9 @@ public class CombatSystem {
             enemyAttack(enemy, player);
             pause(800);
 
-            // Tick down player buff/debuff durations at end of each full turn
+            // Tick down player buff/debuff durations and weapon special cooldowns
             player.decrementCombatBuffs();
+            if (player.getEquippedWeapon() != null) player.getEquippedWeapon().tickCooldowns();
         }
 
         if (!player.isAlive()) {
@@ -236,6 +261,13 @@ public class CombatSystem {
             return;
         }
 
+        // Roll for a special attack (bypasses the standard miss check)
+        EnemySpecialAttack special = enemy.rollSpecialAttack();
+        if (special != null) {
+            executeEnemySpecial(enemy, player, special);
+            return;
+        }
+
         // Miss check: base + player evasion + blind debuff from combat item
         double blindBonus = player.getPendingEnemyBlindMissBonus() / 100.0;
         double totalMiss  = BASE_MISS_CHANCE + player.getEvasionBonus() + blindBonus;
@@ -303,6 +335,168 @@ public class CombatSystem {
 
         item.use(player);
         return true;
+    }
+
+    /**
+     * Shows the player's weapon specials and lets them choose one to execute.
+     * Returns true if a special was used (counts as the player's action),
+     * false if they cancelled, chose an invalid option, or selected a skill on cooldown.
+     */
+    private boolean handleSpecialAttack(Player player, Enemy enemy, InputHandler inputHandler) {
+        Weapon weapon = player.getEquippedWeapon();
+        if (weapon == null || weapon.getSpecials().isEmpty()) {
+            System.out.println("  Your weapon has no special attacks.");
+            return false;
+        }
+
+        List<WeaponSpecialAttack> specials = weapon.getSpecials();
+        System.out.println("\n  ── Special Attacks ─────────────────────────────────");
+        for (int i = 0; i < specials.size(); i++) {
+            WeaponSpecialAttack s = specials.get(i);
+            int cd     = weapon.getCooldown(s.name);
+            String status = cd > 0 ? "(cooldown: " + cd + " turn(s))" : "(Ready)";
+            System.out.println("  [" + (i + 1) + "] " + s.name
+                    + " — " + buildSpecialTags(s) + "  " + status);
+            System.out.println("       " + s.flavour);
+        }
+        System.out.println("  ────────────────────────────────────────────────────");
+        System.out.println("  Enter number (or 'cancel'):");
+
+        String input = inputHandler.readInput().trim();
+        if (input.equalsIgnoreCase("cancel")) return false;
+
+        int idx;
+        try {
+            idx = Integer.parseInt(input) - 1;
+        } catch (NumberFormatException e) {
+            System.out.println("  Invalid choice.");
+            return false;
+        }
+        if (idx < 0 || idx >= specials.size()) {
+            System.out.println("  Invalid selection.");
+            return false;
+        }
+
+        WeaponSpecialAttack chosen = specials.get(idx);
+        int cd = weapon.getCooldown(chosen.name);
+        if (cd > 0) {
+            System.out.println("  " + chosen.name + " is on cooldown for " + cd + " more turn(s).");
+            return false;
+        }
+
+        playerSpecialAttack(player, enemy, chosen);
+        return true;
+    }
+
+    /** Executes a chosen weapon special: damage, lifesteal, stun, cooldown, phase check. */
+    private void playerSpecialAttack(Player player, Enemy enemy, WeaponSpecialAttack special) {
+        System.out.println("\n  " + special.flavour);
+        pause(750);
+
+        int base = player.getAttackPower() + player.getCombatAttackBonus();
+        int damage;
+        if (special.ignoresDefense) {
+            damage = Math.max(1, (int)(base * special.multiplier));
+        } else {
+            damage = Math.max(1, (int)(base * special.multiplier) - enemy.getDefense());
+        }
+
+        enemy.takeDamage(damage);
+        System.out.println("  " + special.name + "! " + damage + " damage dealt.");
+        pause(400);
+
+        if (special.healPercent > 0) {
+            int healed = player.heal((int)(damage * special.healPercent));
+            if (healed > 0)
+                System.out.println("  You absorb " + healed + " HP from the strike!");
+        }
+
+        if (special.stunChance > 0 && Math.random() < special.stunChance) {
+            if (enemy instanceof Boss && ((Boss) enemy).isImmuneToStun()) {
+                System.out.println("  " + enemy.getName() + " resists the stun!");
+            } else {
+                enemyStunned = true;
+                System.out.println("  " + enemy.getName() + " is stunned!");
+            }
+        }
+
+        player.getEquippedWeapon().setCooldown(special.name, special.cooldownTurns);
+
+        System.out.println("  " + enemy.getName() + " HP: "
+                + Math.max(0, enemy.getHealth()) + "/" + enemy.getMaxHealth());
+
+        if (!enemy.isAlive()) {
+            pause(700);
+            if (enemy.getName().equalsIgnoreCase("Shadow Lord")) {
+                displayShadowLordDeath();
+            } else {
+                System.out.println("\n  " + enemy.getName() + " has been defeated!");
+            }
+            return;
+        }
+
+        if (enemy instanceof Boss) {
+            String msg = ((Boss) enemy).checkPhaseTransition();
+            if (msg != null) displayPhaseTransition((Boss) enemy);
+        }
+    }
+
+    /** Executes an enemy special attack: damage (with optional defence pierce), self-heal, player stun. */
+    private void executeEnemySpecial(Enemy enemy, Player player, EnemySpecialAttack special) {
+        System.out.println("\n  " + special.flavour);
+        pause(800);
+
+        int base     = enemy.getAttackStrategy().calculateDamage(enemy, player);
+        int rawDmg   = (int)(base * special.damageMultiplier);
+        int damage;
+        if (special.ignoresDefense) {
+            damage = (int) Math.max(1, Math.round(rawDmg * enemyDamageMultiplier));
+        } else {
+            damage = (int) Math.max(1,
+                    Math.round(rawDmg * enemyDamageMultiplier) - player.getCombatDefenseBonus());
+        }
+
+        player.takeDamage(damage);
+        System.out.println("  " + special.name + " deals " + damage + " damage to you!");
+        pause(400);
+
+        if (special.selfHeal > 0) {
+            int healed = enemy.heal(special.selfHeal);
+            if (healed > 0)
+                System.out.println("  " + enemy.getName() + " heals " + healed + " HP!");
+        }
+
+        if (special.stunPlayer) {
+            playerStunnedNextTurn = true;
+            System.out.println("  You are stunned — you cannot act next turn!");
+        }
+
+        double reflectRate = getTotalReflectRate(player);
+        if (reflectRate > 0 && enemy.isAlive()) {
+            int reflected = Math.max(1, (int)(damage * reflectRate));
+            enemy.takeDamage(reflected);
+            System.out.println("  Your enchanted armour reflects " + reflected + " damage!");
+            if (!enemy.isAlive()) {
+                pause(700);
+                System.out.println("\n  " + enemy.getName() + " has been defeated by reflected damage!");
+            }
+        }
+
+        System.out.println("  Your HP: " + Math.max(0, player.getHealth()) + "/" + player.getMaxHealth());
+        if (!player.isAlive()) {
+            pause(700);
+            System.out.println("\n  You have been defeated...");
+        }
+    }
+
+    private String buildSpecialTags(WeaponSpecialAttack s) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.format("%.1fx dmg", s.multiplier));
+        if (s.ignoresDefense) sb.append(", pierces armour");
+        if (s.healPercent  > 0) sb.append(String.format(", %.0f%% lifesteal", s.healPercent  * 100));
+        if (s.stunChance   > 0) sb.append(String.format(", %.0f%% stun",      s.stunChance   * 100));
+        sb.append(", ").append(s.cooldownTurns).append("t cd");
+        return sb.toString();
     }
 
     /**

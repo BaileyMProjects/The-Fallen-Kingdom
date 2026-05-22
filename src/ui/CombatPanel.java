@@ -155,7 +155,7 @@ public class CombatPanel extends JPanel {
         inputField.addActionListener(e -> doSubmit.run());
         sendBtn.addActionListener(e -> doSubmit.run());
 
-        JLabel hint = new JLabel("  [A] Attack   [U] Use item   [R] Run  —  ");
+        JLabel hint = new JLabel("  [A] Attack   [S] Special   [U] Use item   [R] Run  —  ");
         hint.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 11));
         hint.setForeground(FG_HINT);
 
