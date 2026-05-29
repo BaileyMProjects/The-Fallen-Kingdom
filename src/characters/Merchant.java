@@ -1,6 +1,8 @@
 package characters;
 
+import items.Armour;
 import items.Item;
+import items.Weapon;
 import quests.QuestManager;
 
 import java.util.ArrayList;
@@ -93,7 +95,9 @@ public class Merchant extends NPC {
             return;
         }
         player.getInventory().addItem(found);
-        shopItems.remove(found);
+        // Weapons and armour are finite stock; consumables and materials restock infinitely.
+        boolean isGear = found instanceof Weapon || found instanceof Armour;
+        if (isGear) shopItems.remove(found);
         System.out.println("Purchased: " + found.getName() + " for " + found.getValue() + " gold.");
     }
 

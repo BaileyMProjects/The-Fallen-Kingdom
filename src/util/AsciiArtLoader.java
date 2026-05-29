@@ -2,22 +2,26 @@ package util;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
 /**
- * AsciiArtLoader — reads enemy ASCII art from the resources/ascii/ directory.
+ * AsciiArtLoader — reads enemy ASCII art for display in combat.
  *
  * File naming: the enemy's display name is lowercased and spaces replaced with
- * underscores, e.g. "Shadow Goblin" → resources/ascii/shadow_goblin.txt.
+ * underscores, e.g. "Shadow Goblin" → shadow_goblin.txt.
  *
- * Paths are resolved relative to the working directory, which is the project
- * root when the game is launched as described in README.md.  A missing file
- * returns a placeholder string instead of throwing, so the GUI degrades
- * gracefully if an art file has not been added yet.
+ * Art is first looked up on the classpath (so it loads when bundled inside the
+ * executable jar), then falls back to resources/ascii/ on the filesystem (so it
+ * still loads when run from the project root as described in README.md).  A
+ * missing file returns a placeholder string instead of throwing, so the GUI
+ * degrades gracefully if an art file has not been added yet.
  */
 public class AsciiArtLoader {
 
-    private static final String ART_DIR = "resources/ascii/";
+    private static final String ART_DIR       = "resources/ascii/"; // filesystem (dev runs)
+    private static final String ART_CLASSPATH = "/ascii/";          // inside the jar
 
     private AsciiArtLoader() {}
 
@@ -29,15 +33,25 @@ public class AsciiArtLoader {
      */
     public static String load(String enemyName) {
         String filename = toFilename(enemyName);
+
+        try (InputStream in = AsciiArtLoader.class.getResourceAsStream(ART_CLASSPATH + filename)) {
+            if (in != null) {
+                return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            }
+        } catch (IOException ignored) {
+            // fall through to the filesystem
+        }
+
         File file = new File(ART_DIR + filename);
-        if (!file.exists()) {
-            return buildPlaceholder(enemyName);
+        if (file.exists()) {
+            try {
+                return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+            } catch (IOException ignored) {
+                // fall through to the placeholder
+            }
         }
-        try {
-            return new String(Files.readAllBytes(file.toPath()));
-        } catch (IOException e) {
-            return buildPlaceholder(enemyName);
-        }
+
+        return buildPlaceholder(enemyName);
     }
 
     // -------------------------------------------------------------------------

@@ -315,8 +315,8 @@ public class CombatSystem {
             return false;
         }
 
-        System.out.println("\n  Inventory:");
-        player.getInventory().listItems();
+        System.out.println("\n  Consumables:");
+        player.getInventory().listConsumables();
         System.out.println("  Enter item name (or 'cancel'):");
         System.out.print("  > ");
         String itemName = inputHandler.readInput().trim();

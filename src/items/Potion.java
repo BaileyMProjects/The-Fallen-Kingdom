@@ -37,6 +37,8 @@ public class Potion extends Item {
 
     public int getHealAmount() { return healAmount; }
 
+    @Override public boolean isStackable() { return true; }
+
     @Override
     public String getDescription() {
         return super.getDescription() + "  [restores " + healAmount + " HP]";

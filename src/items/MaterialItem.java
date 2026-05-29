@@ -19,6 +19,8 @@ public class MaterialItem extends Item {
         this.loreText = loreText;
     }
 
+    @Override public boolean isStackable() { return true; }
+
     @Override
     public void use(Player player) {
         System.out.println("\n--- " + getName() + " ---");

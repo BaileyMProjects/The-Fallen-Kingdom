@@ -119,4 +119,6 @@ public class CombatPotion extends Item {
     public Effect getEffect()   { return effect; }
     public int    getAmount()   { return amount; }
     public int    getDuration() { return duration; }
+
+    @Override public boolean isStackable() { return true; }
 }

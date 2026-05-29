@@ -60,6 +60,9 @@ public abstract class Item implements java.io.Serializable {
     public String getRawDescription() { return description; }
     public int    getValue()          { return value; }
 
+    /** Returns true if multiple copies of this item collapse into a counted stack in the inventory. */
+    public boolean isStackable()      { return false; }
+
     @Override
     public String toString() {
         return name + " [" + value + "g]";

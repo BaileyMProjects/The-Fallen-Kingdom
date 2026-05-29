@@ -13,10 +13,17 @@ import events.GameEvent;
 import events.GameEventType;
 import characters.ArenaMaster;
 import characters.Enchanter;
+import enchantments.ArmourEnchantment;
+import enchantments.DivineArmourEnchantment;
+import enchantments.DivineWeaponEnchantment;
 import enchantments.WeaponEnchantment;
+import items.Armour;
+import items.CombatPotion;
 import items.Item;
 import items.ItemFactory;
 import items.ItemType;
+import items.Potion;
+import items.Weapon;
 import quests.QuestManager;
 import util.Command;
 import util.CommandParser;
@@ -203,6 +210,7 @@ public class Game {
             case SAVE:       handleSave(command);    break;
             case MAP:        handleMap();            break;
             case OPTEST:     handleOpTest();         break;
+            case OPARMED:    handleOpArmed();        break;
             case STATS:      handleStats();          break;
             case QUESTS:     handleQuests();         break;
             case HELP:       handleHelp();           break;
@@ -299,10 +307,77 @@ public class Game {
             System.out.print('');
             return;
         }
-        System.out.println("\n--- Inventory ---");
-        player.getInventory().listItems();
-        System.out.println("Gold: " + player.getGold());
-        System.out.println("-----------------\n");
+        System.out.println("\n════════════════════════════════════════════════════");
+        System.out.println("                 I N V E N T O R Y                 ");
+        System.out.println("════════════════════════════════════════════════════\n");
+
+        // ── EQUIPPED ────────────────────────────────────────────────────────
+        System.out.println("  ── EQUIPPED ──────────────────────────────────────");
+        Weapon ew = player.getEquippedWeapon();
+        System.out.println("  Weapon : " + (ew != null ? ew.getName() + "  (" + weaponStatsLine(ew) + ")" : "(none)"));
+        Armour eh = player.getEquippedHead();
+        System.out.println("  Head   : " + (eh != null ? eh.getName() + "  (" + armourStatsLine(eh) + ")" : "(none)"));
+        Armour et = player.getEquippedTorso();
+        System.out.println("  Torso  : " + (et != null ? et.getName() + "  (" + armourStatsLine(et) + ")" : "(none)"));
+        Armour el = player.getEquippedLegs();
+        System.out.println("  Legs   : " + (el != null ? el.getName() + "  (" + armourStatsLine(el) + ")" : "(none)"));
+
+        // Categorise non-equipped inventory items
+        List<Weapon>  weapons     = new ArrayList<>();
+        List<Armour>  armours     = new ArrayList<>();
+        List<Item>    consumables = new ArrayList<>();
+        List<Item>    other       = new ArrayList<>();
+        java.util.Set<String> shownStack = new java.util.HashSet<>();
+
+        for (Item item : player.getInventory().getItems()) {
+            if (item instanceof Weapon) {
+                if (item != ew) weapons.add((Weapon) item);
+            } else if (item instanceof Armour) {
+                if (item != eh && item != et && item != el) armours.add((Armour) item);
+            } else if (item instanceof Potion || item instanceof CombatPotion) {
+                if (!item.isStackable() || shownStack.add(item.getName().toLowerCase())) consumables.add(item);
+            } else {
+                if (!item.isStackable() || shownStack.add(item.getName().toLowerCase())) other.add(item);
+            }
+        }
+
+        // ── WEAPONS ─────────────────────────────────────────────────────────
+        System.out.println("\n  ── WEAPONS ────────────────────────────────────────");
+        if (weapons.isEmpty()) System.out.println("  (none in inventory)");
+        else for (Weapon w : weapons) System.out.println("  " + w.getName() + "  (" + weaponStatsLine(w) + ")");
+
+        // ── ARMOUR ──────────────────────────────────────────────────────────
+        System.out.println("\n  ── ARMOUR ─────────────────────────────────────────");
+        if (armours.isEmpty()) System.out.println("  (none in inventory)");
+        else for (Armour a : armours) {
+            String slot = a.getSlot().name().charAt(0) + a.getSlot().name().substring(1).toLowerCase();
+            System.out.println("  " + a.getName() + "  (" + slot + ", " + armourStatsLine(a) + ")");
+        }
+
+        // ── CONSUMABLES ──────────────────────────────────────────────────────
+        System.out.println("\n  ── CONSUMABLES ────────────────────────────────────");
+        if (consumables.isEmpty()) System.out.println("  (none)");
+        else for (Item item : consumables) {
+            int count = player.getInventory().getCount(item);
+            String prefix = count > 1 ? count + "x " : "";
+            String detail = item instanceof Potion
+                    ? "restores " + ((Potion) item).getHealAmount() + " HP"
+                    : shortCombatPotionDesc((CombatPotion) item);
+            System.out.println("  " + prefix + item.getName() + "  — " + detail);
+        }
+
+        // ── MATERIALS & QUEST ITEMS ─────────────────────────────────────────
+        System.out.println("\n  ── MATERIALS & QUEST ITEMS ────────────────────────");
+        if (other.isEmpty()) System.out.println("  (none)");
+        else for (Item item : other) {
+            int count = player.getInventory().getCount(item);
+            String prefix = count > 1 ? count + "x " : "";
+            System.out.println("  " + prefix + item.getName());
+        }
+
+        System.out.println("\n  Gold : " + player.getGold() + "g");
+        System.out.println("  Slots: " + player.getInventory().size() + "/" + player.getInventory().getCapacity());
+        System.out.println("\n════════════════════════════════════════════════════\n");
         System.out.print('');
     }
 
@@ -316,12 +391,16 @@ public class Game {
             System.out.println("You don't have a '" + command.getArgString() + "'.");
             return;
         }
+        if (item instanceof Weapon || item instanceof Armour) {
+            System.out.println("You can't use a " + item.getName() + " like that — try 'equip' instead.");
+            return;
+        }
         item.use(player);
     }
 
     private void handleEquip(Command command) {
         if (!command.hasArgs()) {
-            System.out.println("Equip what?");
+            System.out.println("Equip what? (specify a weapon or armour name)");
             return;
         }
         Item item = player.getInventory().findItem(command.getArgString());
@@ -329,7 +408,48 @@ public class Game {
             System.out.println("You don't have a '" + command.getArgString() + "'.");
             return;
         }
+        if (!(item instanceof Weapon) && !(item instanceof Armour)) {
+            System.out.println("You can't equip a " + item.getName() + " — try 'use' for consumables.");
+            return;
+        }
         player.equip(item);
+    }
+
+    private String weaponStatsLine(Weapon w) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("+").append(w.getAttackBonus()).append(" atk");
+        if (w instanceof WeaponEnchantment) {
+            WeaponEnchantment we = (WeaponEnchantment) w;
+            if (we.getLifestealRate()  > 0)   sb.append(", ").append((int)(we.getLifestealRate()*100)).append("% lifesteal");
+            if (we.getPoisonDamage()   > 0)   sb.append(", +").append(we.getPoisonDamage()).append(" poison/").append(we.getPoisonTurns()).append("t");
+            if (we.getSlowChance()     > 0)   sb.append(", ").append((int)(we.getSlowChance()*100)).append("% slow");
+            if (we.getStunChance()     > 0)   sb.append(", ").append((int)(we.getStunChance()*100)).append("% stun");
+            if (we.getGoldMultiplier() > 1.0) sb.append(", ").append((int)((we.getGoldMultiplier()-1)*100)).append("% bonus gold");
+        }
+        return sb.toString();
+    }
+
+    private String armourStatsLine(Armour a) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("+").append(a.getDefenseBonus()).append(" def");
+        if (a.getMissBonus() > 0) sb.append(", +").append((int)(a.getMissBonus()*100)).append("% evade");
+        if (a instanceof ArmourEnchantment) {
+            ArmourEnchantment ae = (ArmourEnchantment) a;
+            if (ae.getRegenAmount() > 0) sb.append(", +").append(ae.getRegenAmount()).append(" regen/turn");
+            if (ae.getReflectRate() > 0) sb.append(", ").append((int)(ae.getReflectRate()*100)).append("% reflect");
+        }
+        return sb.toString();
+    }
+
+    private String shortCombatPotionDesc(CombatPotion cp) {
+        switch (cp.getEffect()) {
+            case BUFF_ATTACK:   return "+" + cp.getAmount() + " atk for " + cp.getDuration() + "t";
+            case BUFF_DEFENSE:  return "+" + cp.getAmount() + " def for " + cp.getDuration() + "t";
+            case DEBUFF_POISON: return cp.getAmount() + " poison dmg/" + cp.getDuration() + "t";
+            case DEBUFF_BLIND:  return "+" + cp.getAmount() + "% enemy miss/" + cp.getDuration() + "t";
+            case DEBUFF_STUN:   return "stuns enemy for 1 turn";
+            default:            return "";
+        }
     }
 
     private void handleTalk(Command command) {
@@ -607,6 +727,40 @@ public class Game {
         player.addGold(9999);
         player.gainExperience(9999);
         System.out.println("[OPTEST] +9999 gold, +9999 XP applied.");
+    }
+
+    private void handleOpArmed() {
+        // Best weapon: Seraphic Blade + Divine enchantment
+        Weapon baseWeapon = (Weapon) ItemFactory.create(ItemType.SERAPHIC_BLADE);
+        DivineWeaponEnchantment divWeapon = new DivineWeaponEnchantment(baseWeapon, difficulty);
+        player.getInventory().addItem(divWeapon);
+        player.equip(divWeapon);
+
+        // Best head: Seraph's Crown + Divine enchantment
+        Armour baseHead = (Armour) ItemFactory.create(ItemType.SERAPH_CROWN);
+        DivineArmourEnchantment divHead = new DivineArmourEnchantment(baseHead, difficulty);
+        player.getInventory().addItem(divHead);
+        player.equip(divHead);
+
+        // Best torso: Sanctum Plate + Divine enchantment
+        Armour baseTorso = (Armour) ItemFactory.create(ItemType.SANCTUM_PLATE);
+        DivineArmourEnchantment divTorso = new DivineArmourEnchantment(baseTorso, difficulty);
+        player.getInventory().addItem(divTorso);
+        player.equip(divTorso);
+
+        // Best legs: Seraph's Tassets + Divine enchantment
+        Armour baseLegs = (Armour) ItemFactory.create(ItemType.SERAPH_TASSETS);
+        DivineArmourEnchantment divLegs = new DivineArmourEnchantment(baseLegs, difficulty);
+        player.getInventory().addItem(divLegs);
+        player.equip(divLegs);
+
+        // Fill out with consumables and gold for testing
+        for (int i = 0; i < 5; i++) player.getInventory().addItem(ItemFactory.create(ItemType.DIVINE_TONIC));
+        for (int i = 0; i < 3; i++) player.getInventory().addItem(ItemFactory.create(ItemType.SMOKE_BOMB));
+        for (int i = 0; i < 3; i++) player.getInventory().addItem(ItemFactory.create(ItemType.BATTLE_TONIC));
+        player.addGold(9999);
+        player.gainExperience(9999);
+        System.out.println("[OPARMED] Best gear equipped, consumables added, +9999 gold and XP.");
     }
 
     private void handleQuit() {

@@ -5,7 +5,10 @@
       "Bash(javac -d out -sourcepath src src/core/Main.java)",
       "Bash(mkdir -p \"build/jar\")",
       "Bash(echo \"Main-Class: core.Main\")",
-      "Bash(\"C:/Program Files/Java/jdk-26.0.1/bin/jar\" cfm \"build/jar/fallen-kingdom.jar\" \"build/jar/MANIFEST.MF\" -C \"out/production/cs1op-textgame\" .)"
+      "Bash(\"C:/Program Files/Java/jdk-26.0.1/bin/jar\" cfm \"build/jar/fallen-kingdom.jar\" \"build/jar/MANIFEST.MF\" -C \"out/production/cs1op-textgame\" .)",
+      "PowerShell(cmd /c \"C:\\\\Users\\\\mcnin\\\\.vscode\\\\Projects\\\\cs1op-textgame\\\\build.bat\" 2>&1)",
+      "Bash(java -version)",
+      "Bash(javac -version)"
     ]
   }
 }

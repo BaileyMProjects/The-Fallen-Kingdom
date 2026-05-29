@@ -145,6 +145,9 @@ public class CommandParser {
             case "optest":
                 return new Command(CommandType.OPTEST, new String[0]);
 
+            case "oparmed":
+                return new Command(CommandType.OPARMED, new String[0]);
+
             case "quit": case "exit": case "bye": case "q":
                 return new Command(CommandType.QUIT, new String[0]);
 
