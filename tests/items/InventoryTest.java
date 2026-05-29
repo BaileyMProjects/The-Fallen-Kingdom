@@ -42,9 +42,9 @@ class InventoryTest {
 
     @Test
     void addItem_returnsFalseWhenFull() {
-        // Fill to MAX_CAPACITY (20) using a fresh potion per slot
+        // Fill to MAX_CAPACITY (20) using fresh non-stackable items (one slot each)
         for (int i = 0; i < inventory.getCapacity(); i++) {
-            inventory.addItem(ItemFactory.create(ItemType.HEALTH_POTION));
+            inventory.addItem(ItemFactory.create(ItemType.IRON_SWORD));
         }
         assertFalse(inventory.addItem(sword),
                 "addItem should return false once the inventory is at capacity");
@@ -53,7 +53,7 @@ class InventoryTest {
     @Test
     void addItem_sizeDoesNotExceedCapacity() {
         for (int i = 0; i <= inventory.getCapacity(); i++) {
-            inventory.addItem(ItemFactory.create(ItemType.HEALTH_POTION));
+            inventory.addItem(ItemFactory.create(ItemType.IRON_SWORD));
         }
         assertEquals(inventory.getCapacity(), inventory.size());
     }

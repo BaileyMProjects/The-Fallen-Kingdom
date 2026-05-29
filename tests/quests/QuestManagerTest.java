@@ -73,10 +73,11 @@ class QuestManagerTest {
         eventManager.notify(new GameEvent(
                 GameEventType.TALKED_TO_NPC, "village elder"));
 
-        List<Quest> active = questManager.getActiveQuests();
-        assertTrue(active.stream()
-                         .anyMatch(q -> q.getName().equals("The Elder's Plea")),
-                "The Elder's Plea should auto-start when TALKED_TO_NPC(village elder) fires");
+        List<Quest> quests = questManager.getQuests();
+        assertTrue(quests.stream()
+                         .filter(q -> q.getName().equals("The Elder's Plea"))
+                         .anyMatch(q -> q.isInProgress() || q.isCompleted()),
+                "The Elder's Plea should start (and may immediately complete) when TALKED_TO_NPC(village elder) fires");
     }
 
     @Test

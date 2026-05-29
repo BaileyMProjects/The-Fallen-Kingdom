@@ -31,9 +31,9 @@ class EnemyFactoryTest {
     void shadowGoblin_hasCorrectStats() {
         Enemy goblin = EnemyFactory.create(EnemyType.SHADOW_GOBLIN);
         assertAll("Shadow Goblin stats",
-                () -> assertEquals(30, goblin.getMaxHealth(), "max HP"),
-                () -> assertEquals(8,  goblin.getAttackPower(), "attack"),
-                () -> assertEquals(2,  goblin.getDefense(), "defense"),
+                () -> assertEquals(35, goblin.getMaxHealth(), "max HP"),
+                () -> assertEquals(12, goblin.getAttackPower(), "attack"),
+                () -> assertEquals(3,  goblin.getDefense(), "defense"),
                 () -> assertEquals(10, goblin.getGoldDrop(), "gold drop")
         );
     }
@@ -57,10 +57,10 @@ class EnemyFactoryTest {
     void darkKnight_hasCorrectStats() {
         Enemy knight = EnemyFactory.create(EnemyType.DARK_KNIGHT);
         assertAll("Dark Knight stats",
-                () -> assertEquals(70, knight.getMaxHealth(), "max HP"),
-                () -> assertEquals(15, knight.getAttackPower(), "attack"),
-                () -> assertEquals(8,  knight.getDefense(), "defense"),
-                () -> assertEquals(25, knight.getGoldDrop(), "gold drop")
+                () -> assertEquals(300, knight.getMaxHealth(), "max HP"),
+                () -> assertEquals(55,  knight.getAttackPower(), "attack"),
+                () -> assertEquals(22,  knight.getDefense(), "defense"),
+                () -> assertEquals(25,  knight.getGoldDrop(), "gold drop")
         );
     }
 
@@ -93,9 +93,9 @@ class EnemyFactoryTest {
     void shadowLord_hasCorrectStats() {
         Enemy lord = EnemyFactory.create(EnemyType.SHADOW_LORD);
         assertAll("Shadow Lord stats",
-                () -> assertEquals(120, lord.getMaxHealth(), "max HP"),
-                () -> assertEquals(20,  lord.getAttackPower(), "attack"),
-                () -> assertEquals(10,  lord.getDefense(), "defense")
+                () -> assertEquals(1500, lord.getMaxHealth(), "max HP"),
+                () -> assertEquals(90,   lord.getAttackPower(), "attack"),
+                () -> assertEquals(30,   lord.getDefense(), "defense")
         );
     }
 

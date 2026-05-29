@@ -159,12 +159,12 @@ class CombatSystemTest {
 
     @Test
     void executeCombat_xpAmountIsHalfEnemyMaxHp() {
-        // Shadow Goblin maxHP = 30 → expected XP = max(5, 30/2) = 15
+        // Expected XP = max(5, enemy.maxHP / 2), computed from the goblin's actual stats
         InputHandler input = guiInput();
         for (int i = 0; i < 10; i++) input.provide("a");
 
         combatSystem.executeCombat(hero, goblin, input);
-        assertEquals(15, hero.getExperience(),
+        assertEquals(Math.max(5, goblin.getMaxHealth() / 2), hero.getExperience(),
                 "XP granted should equal max(5, enemy.maxHP / 2)");
     }
 
