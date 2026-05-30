@@ -162,7 +162,7 @@ public class EnemyFactory {
     private static Enemy createStoneSentinel() {
         Enemy sentinel = new Enemy(
             "Stone Sentinel",
-            380, 45, 30, 15,
+            200, 45, 15, 15,
             "A massive construct of ancient stone, animated by war-magic long\n" +
             "  since faded. Its fists crack the earth with every step."
         );

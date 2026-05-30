@@ -30,6 +30,7 @@ import util.CommandParser;
 import util.InputHandler;
 import world.Direction;
 import world.Location;
+import world.LocationId;
 import world.World;
 
 import save.GameSnapshot;
@@ -179,8 +180,12 @@ public class Game {
             processCommand(command);
 
             if (running && player.getHealth() <= 0) {
-                displayDefeat();
-                running = false;
+                if (difficulty == Difficulty.HARD) {
+                    displayDefeat();
+                    running = false;
+                } else {
+                    handleDeathRespawn();
+                }
             }
         }
     }
@@ -483,8 +488,12 @@ public class Game {
 
         boolean playerSurvived = combatSystem.executeCombat(player, enemy, inputHandler);
         if (!playerSurvived) {
-            displayDefeat();
-            running = false;
+            if (difficulty == Difficulty.HARD) {
+                displayDefeat();
+                running = false;
+            } else {
+                handleDeathRespawn();
+            }
             return;
         }
 
@@ -816,6 +825,37 @@ public class Game {
         System.out.println("\n════════════════════════════════════════════════════════");
         System.out.println("              T H A N K S   F O R   P L A Y I N G      ");
         System.out.println("════════════════════════════════════════════════════════\n");
+    }
+
+    private void handleDeathRespawn() {
+        pause(1500);
+        System.out.println("\n════════════════════════════════════════════════════════");
+        System.out.println("                  D E F E A T E D                      ");
+        System.out.println("════════════════════════════════════════════════════════");
+        pause(800);
+        System.out.println("\n  You fall. The darkness swallows you whole...");
+        pause(1000);
+        System.out.println("  But fate is not yet done with you.");
+        pause(1200);
+        System.out.println("  A passing stranger drags you from the field and tends your wounds.");
+        pause(1000);
+
+        int goldLost = player.getGold() / 5;
+        if (goldLost > 0) player.spendGold(goldLost);
+        player.setHealth(Math.max(1, player.getMaxHealth() / 2));
+        world.teleportTo(LocationId.VILLAGE);
+
+        System.out.println("\n  You wake in the Village.");
+        System.out.println("  HP restored to " + player.getHealth() + "/" + player.getMaxHealth() + ".");
+        if (goldLost > 0)
+            System.out.println("  Your purse is lighter — " + goldLost + " gold lost in the chaos.");
+        pause(1000);
+        System.out.println("\n════════════════════════════════════════════════════════\n");
+        pause(500);
+
+        displayLocation();
+        eventManager.notify(new GameEvent(GameEventType.PLAYER_STATS_CHANGED, null));
+        eventManager.notify(new GameEvent(GameEventType.RETURN_FROM_COMBAT, null));
     }
 
     private void displayDefeat() {

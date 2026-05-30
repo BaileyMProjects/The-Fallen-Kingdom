@@ -92,7 +92,7 @@ public abstract class Character implements java.io.Serializable {
     protected void setDefense(int defense)      { this.defense = Math.max(0, defense); }
     protected void setMaxHealth(int maxHealth)  { this.maxHealth = Math.max(1, maxHealth); }
 
-    protected void setHealth(int health) {
+    public void setHealth(int health) {
         this.health = Math.max(0, Math.min(this.maxHealth, health));
     }
 

@@ -729,6 +729,14 @@ public class World {
         }
     }
 
+    public void teleportTo(LocationId id) {
+        Location dest = locations.get(id);
+        if (dest != null) {
+            currentLocation = dest;
+            player.markVisited(id);
+        }
+    }
+
     public Location getCurrentLocation()       { return currentLocation; }
     public Location getLocation(LocationId id) { return locations.get(id); }
 
