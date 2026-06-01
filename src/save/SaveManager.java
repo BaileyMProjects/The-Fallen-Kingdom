@@ -14,7 +14,12 @@ import java.nio.file.*;
  */
 public class SaveManager {
 
-    private static final String SAVE_DIR = "saves";
+    private static final String SAVE_DIR;
+    static {
+        String appData = System.getenv("APPDATA");
+        String base = (appData != null) ? appData : System.getProperty("user.home");
+        SAVE_DIR = base + File.separator + "TheFallenKingdom" + File.separator + "saves";
+    }
     private static final String SAVE_EXT = ".sav";
     public  static final int    NUM_SLOTS = 3;
 
